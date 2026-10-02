@@ -376,5 +376,33 @@
     "licence": "TDC / Carbon-Mangels & Hutter 2011; cite both",
     "sha256": "678341b7e40630a70b4e38b20e22dc73fbd8aff13fdd32cd7f6d702b62b5005e",
     "source_url": "https://dataverse.harvard.edu/api/access/datafile/4259581"
+  },
+  "text_charaka_kaviratna": {
+    "fetched_at": "2026-10-02T18:03:16+00:00",
+    "file": "data\\raw\\texts\\charaka_kaviratna.txt",
+    "licence": "Public domain (1890-1908 translation); scan by BIU Sante, Etalab open licence; archive.org BIUSante_47357",
+    "sha256": "f279e9499b6cc31a39d5498bb2da3e659bdbdac5ef753114ce5ccf76c2c8c673",
+    "source_url": "https://archive.org/download/BIUSante_47357/BIUSante_47357_djvu.txt"
+  },
+  "text_sushruta_v1": {
+    "fetched_at": "2026-10-02T18:03:23+00:00",
+    "file": "data\\raw\\texts\\sushruta_v1.txt",
+    "licence": "Public domain (1907); Digital Library of India scan; archive.org in.ernet.dli.2015.43171",
+    "sha256": "e32c14783dfc5fb1a192545869eecff549b1cacee092061ba139c13148fcaae9",
+    "source_url": "https://archive.org/download/in.ernet.dli.2015.43171/2015.43171.The-Sushruta-Samhita--Vol1_djvu.txt"
+  },
+  "text_sushruta_v2": {
+    "fetched_at": "2026-10-02T18:03:53+00:00",
+    "file": "data\\raw\\texts\\sushruta_v2.txt",
+    "licence": "Public domain (1911); Digital Library of India scan; archive.org in.ernet.dli.2015.39322",
+    "sha256": "151f9443f069a31f438caa9d0c0df95fb9e6d2728a6e56f7373964171c66a9b3",
+    "source_url": "https://archive.org/download/in.ernet.dli.2015.39322/2015.39322.An-English-Translation-Of-The-Sushruta-Samhita--Vol2_djvu.txt"
+  },
+  "text_sushruta_v3": {
+    "fetched_at": "2026-10-02T18:03:59+00:00",
+    "file": "data\\raw\\texts\\sushruta_v3.txt",
+    "licence": "Public domain (1916); Digital Library of India scan; archive.org in.ernet.dli.2015.39323",
+    "sha256": "9e957cac87d99728ee12cae6cbd8575ec697a20df2b967dd63d109dc81659b67",
+    "source_url": "https://archive.org/download/in.ernet.dli.2015.39323/2015.39323.An-English-Translation-Of-The-Sushruta-Samhita--Vol3_djvu.txt"
   }
 }

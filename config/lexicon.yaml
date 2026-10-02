@@ -1,0 +1,54 @@
+# Entity lexicon for the GraphRAG linker (version 1, hand-written, NEEDS REVIEW BY A DOMAIN ADVISOR).
+# Herbs and drugs come from config/scope.yaml (names + aliases). This file adds extra Sanskrit/OCR-era spellings of scoped herbs,
+# doshas, and a compact list of conditions found in the 1890-1916 English translations.
+
+extra_herb_aliases:
+  Phyllanthus emblica: [Amalaki, Dhatri, Emblic myrobalan]
+  Terminalia chebula: [Abhaya, Pathya, Chebulic myrobalan]
+  Withania somnifera: [Asvagandha]
+  Zingiber officinale: [Sunthi, Nagara, dry ginger]
+  Allium sativum: [Rasona]
+  Trigonella foenum-graecum: [Methika]
+  Tinospora sinensis: [Amrita]
+  Momordica charantia: [Karavellaka]
+  Azadirachta indica: [Arishta]
+
+doshas:
+  vata: [vata, vayu, wind, windy humour, vatic]
+  pitta: [pitta, bile, bilious]
+  kapha: [kapha, shleshma, phlegm, phlegmatic]
+  tridosha: [tridosha, three doshas, three humours]
+
+# canonical name -> surface forms (English and Sanskrit as they appear in the translations)
+conditions:
+  fever: [fever, jwara]
+  cough: [cough, kasa]
+  asthma: [asthma, dyspnoea, hiccough, shwasa, svasa]
+  diarrhoea: [diarrhoea, diarrhea, atisara]
+  dysentery: [dysentery]
+  vomiting: [vomiting, emesis, chhardi]
+  indigestion: [indigestion, dyspepsia, agnimandya]
+  piles: [piles, haemorrhoids, hemorrhoids, arsha]
+  jaundice: [jaundice, kamala]
+  anaemia: [anaemia, anemia, pandu]
+  diabetes: [diabetes, prameha, urinary disorders, madhumeha]
+  skin disease: [skin disease, skin diseases, kushtha, leprosy, cutaneous affection]
+  ulcer: [ulcer, ulcers]
+  wound: [wound, wounds]
+  abscess: [abscess, abscesses]
+  fistula: [fistula]
+  rheumatism: [rheumatism, vatarakta, rheumatic]
+  gout: [gout]
+  insomnia: [insomnia, sleeplessness]
+  epilepsy: [epilepsy, apasmara]
+  insanity: [insanity, unmada]
+  obesity: [obesity, corpulence, medoroga]
+  consumption: [consumption, phthisis, rajayakshma]
+  dropsy: [dropsy, anasarca, udara]
+  colic: [colic, shula]
+  worms: [worms, intestinal worms, krimi, anthelmintic]
+  headache: [headache]
+  poison: [poison, poisoning]
+  constipation: [constipation]
+  fatigue: [fatigue, debility, weakness]
+  wound healing: [healing of wounds, cicatrisation]

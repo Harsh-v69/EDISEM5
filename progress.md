@@ -55,14 +55,18 @@ How to run the checks: `.\.venv\Scripts\python -m pytest -q`
 | 3 | HDI labels (silver/gold), leak-safe splits | **Done**: 59,360 labelled pairs, masking proven on real data, cold-herb folds leak-free, 12-row cited gold set (see `docs/labels_report.md`) |
 | 4 | Baselines, GNN, evaluation; **Jivha/Nadi go/no-go** | **Done** (`docs/phase4_results.md`): RF beats GNN on every cold split; graph structure adds nothing over node features; drug-side generalisation weak. **Go/no-go decision still needs you** |
 | 5 | Safe-composition optimiser | **Code and tests done** (LP optimiser, out-of-fold risk, scenario/validation analysis, 142 tests pass); **final run pending** the crawl of IMPPAT's ~1,576 formulation pages (about an hour at the polite rate). A smoke run on the first 109 formulations behaved correctly (coverage floor respected, no herb cut below half its baseline) but its numbers are not final |
-| 6 | GraphRAG + evaluation | Not started |
+| 6 | GraphRAG + evaluation | **Code and tests done** (corpus, index, lexicon, grounded extraction, hybrid retrieval, generation checks, evaluation harness; 195 tests pass). **Real evaluation run pending** the LLM triple extraction (476 passages, running) and then the answer evaluation. Plan: `docs/superpowers/plans/2026-10-02-phase6-graphrag.md` |
 | 7 | Jivha/Nadi pipeline (only if go) | Not started |
 | 8 | Demo + paper drafts | Not started |
 
-Test suite: 142 automated tests, all passing (`.\.venv\Scripts\python -m pytest -q`).
+Test suite: 195 automated tests, all passing (`.\.venv\Scripts\python -m pytest -q`).
 
 ## 5. Log (newest first)
 
+- **2026-10-02, Phase 6 code built (real evaluation run pending).** Downloaded the approved texts (Charaka, Kaviratna; Sushruta vols 1-3, Bhishagratna; ~8 MB) and the MiniLM embedding model; 6,493 passages indexed in 57 s. New modules under `ayurveda_kg/rag/`: `corpus` (OCR cleaning + chunking), `index` (brute-force cosine; FAISS not needed at this size), `lexicon` (alias-aware entity linker; `config/lexicon.yaml` is a hand-written v1 that needs an advisor), `extract` (grounded LLM triple extraction + co-occurrence graph), `textgraph`, `kgfacts`, `retrieve` (dense + alias expansion + text graph + KG facts, fused by reciprocal rank), `generate` (citation-constrained prompt, disclaimer appended by code, citation-validity and lexical-support checks), `evaluate` (synthetic retrieval questions, KG-grounded multi-hop questions with programmatic gold, expert template).
+  - **What real data showed:** (1) a *vocabulary gap*: a question about "turmeric" misses passages that say "Haridra", which alias expansion is designed to close; (2) the linker finds 16 of the 20 scoped herbs in the texts (fenugreek, guggul, kalmegh, sarpagandha not found under our spellings) and 476 passages mention a herb together with a condition.
+  - **Extraction bug found by looking at results, not just tests:** the first LLM extraction run accepted **0 of 100** triples. The grounding filter was right to reject them, but the setup was wrong: the model extracted triples about herbs outside our 20-herb scope, and used verbs like "allays" and "destroys" that our allow-list rejected. Fix: a prompt focused on the scoped herbs actually present in each passage, and a transparent verb map (the raw verb is kept on every triple). A 10-passage probe then accepted 17 of 35 triples. One over-link remains (an object phrase containing the word "wind" links to the vata dosha); it is listed as a limitation for expert review.
+  - **Crawler bug:** the formulation crawl crashed when a failure message contained a Sanskrit name that the Windows console cannot print; fixed with a tested safe-logging helper and resumed.
 - **2026-10-02, Phase 5 code built (final run pending).** New: `compose.py` (linear-programming optimiser: re-weights a formulation's in-scope herbs to minimise predicted interaction risk for a patient's drug, with per-herb share bounds and a coverage floor per therapeutic use; a randomised property test of 400 problems checks every constraint holds and the result is never worse than baseline), `risk.py` (out-of-fold compound/herb-drug risk, so no score comes from a model that saw that compound), `phase5.py` (formulation parsing, scenarios, constraint sweeps, equal-parts-assumption sensitivity, literature-linked case studies, computed report), and `ingest/crawl_formulations.py`.
   - **Data fact that shapes the design:** IMPPAT formulation pages list ingredients and plant parts but **no proportions**, so the baseline is an assumed equal-parts split (and the report tests how much that assumption matters). Only the 20 scoped herbs can be re-weighted; other ingredients stay fixed and unscored.
   - Smoke run on 109 of 1,576 formulations: 60 had two or more scoped herbs; median risk reduction 4% (small, because scoped herbs are only ~20% of the ingredients); 57% of suggestions also improved under the independent silver risk (Spearman 0.64). Final numbers wait for the full crawl.
@@ -110,3 +114,41 @@ Test suite: 142 automated tests, all passing (`.\.venv\Scripts\python -m pytest 
 3. Phase 5: safe-composition optimiser (uses the compound-level risk model from Phase 4; limitations above apply). Phase 6: GraphRAG.
 4. Human review still needed: the 12 gold pairs (pharmacist/Ayurveda expert).
 5. Rebuild everything from cached raw files (no network): `python -m ayurveda_kg.build`, `python -m ayurveda_kg.phase3`, `python -m ayurveda_kg.phase4`, `python -m ayurveda_kg.phase4_report`.
+
+## 9. Downloads log (what was fetched, from where, why)
+
+Everything downloaded is recorded here and, for data files, in `data/manifest.json` (source, licence, checksum). Raw data is never committed.
+
+| Date | What | Source | Size | Purpose / licence note |
+|---|---|---|---|---|
+| 2026-10-01 | IMPPAT plant, compound and human-target pages (1,696 compounds) | cb.imsc.res.in/imppat | ~3,400 pages | Phase 1-2 graph. CC BY-NC-ND: not redistributed |
+| 2026-10-01 | ChEMBL molecule searches + metabolism table; DGIdb TSVs; DDInter CSVs | EBI, dgidb.org, ddinter2.scbdd.com | ~50 MB | Drug side of the graph. Open licences |
+| 2026-10-01 | TDC CYP2C9/2D6/3A4 substrate files | Harvard Dataverse | ~140 KB | Substrate and verified non-substrate labels |
+| 2026-10-02 | PyTorch 2.11 (CUDA 12.8), PyG, RDKit, scikit-learn | PyTorch/PyPI | ~3 GB | Phase 4 models |
+| 2026-10-02 | IMPPAT formulation pages (~1,576) and therapeutic-use pages (20 herbs) | cb.imsc.res.in/imppat | ~220 MB | Phase 5 composition optimiser. CC BY-NC-ND: not redistributed |
+| 2026-10-02 | **Approved, Phase 6:** Charaka Samhita (Kaviratna) and Sushruta Samhita (Bhishagratna) English translations, plain text | archive.org / HathiTrust (public domain, US) | ~5-15 MB | GraphRAG corpus; edition and URLs recorded in `data/manifest.json` |
+| 2026-10-02 | **Approved, Phase 6:** sentence-embedding model all-MiniLM-L6-v2 | Hugging Face | ~90 MB | Passage retrieval |
+| not downloaded | AyurParam GGUF (community conversion, ~1.8 GB) | Hugging Face (arunmcops/AyurParam-GGUF) | ~1.8 GB | **Deferred by the project owner**; needed for the AyurParam-vs-general-LLM comparison. Existing `qwen3:8b` (Ollama, 5.2 GB, already installed) is used as the generator meanwhile |
+
+## 10. Future improvements (backlog, to do for betterment)
+
+**Data and labels**
+- Ask IMSc for permission/bulk files for IMPPAT before any release of derived data. Apply for the DrugBank academic licence and add it as a plug-in.
+- Add **experimental** CYP-inhibition bioactivity (ChEMBL) as an independent label source, so labels are not only SwissADME predictions; report results with and without the predicted labels.
+- Extend the scope beyond 20 herbs and 35 drugs; add UGT and transporter (P-gp) label logic, not only the five CYPs.
+- Have a pharmacist / Ayurveda expert review the 12 gold pairs; grow the gold set with more cited human studies (and more true negatives).
+
+**Modelling (Phase 4)**
+- Add drug chemistry fingerprints (weak drug-side generalisation is the main gap); scaffold split; probability calibration and uncertainty; compound abundance data if any source exists.
+- The graph adds nothing over node features right now: test richer graph signals (e.g. pathway, disease, formulation context) before claiming a graph benefit.
+
+**Composition (Phase 5)**
+- Real proportions: mine classical texts or pharmacopoeia dosage tables instead of equal parts; handle pharmacodynamic interactions (invisible to the CYP model); multi-drug patients; efficacy beyond binary therapeutic-use labels; validate against a pharmacist.
+
+**GraphRAG (Phase 6)**
+- Add AyurParam (GGUF) for the AyurParam-vs-general-LLM comparison; run official AyurParam weights if hardware allows; add more texts (e.g. Ashtanga Hridaya, Bhavaprakasha) once licence-clean editions are found; Hindi evaluation slice.
+- Replace the lexical/LLM-judge faithfulness proxies with an NLI model and, above all, an **expert-verified 50-100 question set**.
+
+**Engineering / publication**
+- Add CI (run tests on push); fix line-ending noise (CRLF) with a `.gitattributes`; consider data versioning; containerise for reproducibility; document GPU non-determinism in the GNN runs.
+- Re-verify the LASI and other brief-sourced statistics near submission; choose venue; internal and mentor review.

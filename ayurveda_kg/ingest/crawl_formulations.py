@@ -11,6 +11,11 @@ from ayurveda_kg.scope import load_scope
 RAW = Path("data/raw/imppat")
 
 
+def safe_text(msg: str) -> str:
+    """Console-safe log text: Sanskrit names must never crash the error handler (Windows consoles are cp1252)."""
+    return msg.encode("ascii", "backslashreplace").decode("ascii")
+
+
 def main(delay=1.0):
     home = fetch(BASE, RAW / "home.html", name="imppat_home", licence=LICENCE, manifest_path=None, delay=delay)
     links = formulation_links(home.read_text(encoding="utf-8", errors="ignore"))
@@ -28,7 +33,7 @@ def main(delay=1.0):
             index.append((kind, name, fn)); ok += 1
         except Exception as e:
             failed += 1
-            print(f"FAILED {kind} {name}: {e!r}", flush=True)
+            print(safe_text(f"FAILED {kind} {name}: {e!r}"), flush=True)
         if i % 100 == 0:
             print(f"[formulations] {i}/{len(links)} ok={ok} failed={failed}", flush=True)
     with open(RAW / "formulations_index.tsv", "w", encoding="utf-8", newline="") as f:
