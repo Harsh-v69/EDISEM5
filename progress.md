@@ -1,6 +1,6 @@
 # Project Progress (read this first)
 
-_Last updated: 2026-10-02 (Phases 0-4 complete; Jivha/Nadi go/no-go pending your decision). For a full project briefing (slides/reports) see `context.md`._ This file is written so someone with zero background can understand the project and where it stands._
+_Last updated: 2026-10-02 (Phases 0-4 complete; Phase 5 code done, final run waiting on a data crawl; Jivha/Nadi go/no-go pending your decision). For a full project briefing (slides/reports) see `context.md`. This file is written so someone with zero background can understand the project and where it stands._
 
 ## 1. What is this project?
 
@@ -54,15 +54,18 @@ How to run the checks: `.\.venv\Scripts\python -m pytest -q`
 | 2 | Resolve entities, build the unified KG | **Done**: 0 validation problems, 5 plausibility checks pass (see `docs/kg_report.md`) |
 | 3 | HDI labels (silver/gold), leak-safe splits | **Done**: 59,360 labelled pairs, masking proven on real data, cold-herb folds leak-free, 12-row cited gold set (see `docs/labels_report.md`) |
 | 4 | Baselines, GNN, evaluation; **Jivha/Nadi go/no-go** | **Done** (`docs/phase4_results.md`): RF beats GNN on every cold split; graph structure adds nothing over node features; drug-side generalisation weak. **Go/no-go decision still needs you** |
-| 5 | Safe-composition optimiser | Not started |
+| 5 | Safe-composition optimiser | **Code and tests done** (LP optimiser, out-of-fold risk, scenario/validation analysis, 142 tests pass); **final run pending** the crawl of IMPPAT's ~1,576 formulation pages (about an hour at the polite rate). A smoke run on the first 109 formulations behaved correctly (coverage floor respected, no herb cut below half its baseline) but its numbers are not final |
 | 6 | GraphRAG + evaluation | Not started |
 | 7 | Jivha/Nadi pipeline (only if go) | Not started |
 | 8 | Demo + paper drafts | Not started |
 
-Test suite: 118 automated tests, all passing (`.\.venv\Scripts\python -m pytest -q`).
+Test suite: 142 automated tests, all passing (`.\.venv\Scripts\python -m pytest -q`).
 
 ## 5. Log (newest first)
 
+- **2026-10-02, Phase 5 code built (final run pending).** New: `compose.py` (linear-programming optimiser: re-weights a formulation's in-scope herbs to minimise predicted interaction risk for a patient's drug, with per-herb share bounds and a coverage floor per therapeutic use; a randomised property test of 400 problems checks every constraint holds and the result is never worse than baseline), `risk.py` (out-of-fold compound/herb-drug risk, so no score comes from a model that saw that compound), `phase5.py` (formulation parsing, scenarios, constraint sweeps, equal-parts-assumption sensitivity, literature-linked case studies, computed report), and `ingest/crawl_formulations.py`.
+  - **Data fact that shapes the design:** IMPPAT formulation pages list ingredients and plant parts but **no proportions**, so the baseline is an assumed equal-parts split (and the report tests how much that assumption matters). Only the 20 scoped herbs can be re-weighted; other ingredients stay fixed and unscored.
+  - Smoke run on 109 of 1,576 formulations: 60 had two or more scoped herbs; median risk reduction 4% (small, because scoped herbs are only ~20% of the ingredients); 57% of suggestions also improved under the independent silver risk (Spearman 0.64). Final numbers wait for the full crawl.
 - **2026-10-02, Phase 4 complete.** Models (prior, matrix factorisation, Random Forest, hetero-GraphSAGE GNN, and a no-message-passing MLP ablation) trained on the **masked** graph and evaluated on 5-fold cold-compound, cold-herb, cold-drug and (inflated reference) random-pair splits; GNN/MLP use 3 seeds. Everything is in `docs/phase4_results.md` (reproduce: `python -m ayurveda_kg.phase4` then `python -m ayurveda_kg.phase4_report`; the run is resumable).
   - **Headline numbers (mean AUROC over folds):** cold-compound RF 0.945 (GNN 0.903, prior 0.714); cold-herb RF 0.885 +/- 0.052 (GNN 0.837, prior 0.704; folds range 0.795-0.930); cold-drug pooled RF 0.985 (GNN 0.969).
   - **What the grouped metrics revealed (checked after the pooled score looked too good):** cold-drug pooled AUROC is almost entirely *compound-side* skill (within-drug 0.989). *Drug-side* skill on unseen drugs (ranking drugs for a compound) is only 0.72 for RF, 0.60 for MLP and 0.53 (chance) for the GNN. So the models know which compounds look like CYP inhibitors but barely generalise to new drugs.

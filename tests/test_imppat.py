@@ -95,3 +95,34 @@ def test_crawl_compounds_index_resume_and_failures(tmp_path):
     n = len(s.urls)
     crawl_compounds(["A"], tmp_path / "raw", delay=0, session=s, manifest_path=mp)  # cached: no refetch
     assert len(s.urls) == n
+
+
+# ---- Phase 5 parsers: formulations and therapeutic uses ----
+from ayurveda_kg.ingest.imppat import formulation_names, parse_formulation_page, parse_therapeutics_page
+
+
+def test_parse_formulation_page_ingredients_id_and_dosage():
+    f = parse_formulation_page(read("imppat_formulation_AFI000593.html"))
+    assert f["id"] == "AFI000593" and f["name"].startswith("Abhay")
+    ings = {i["ingredient"]: i["part"] for i in f["ingredients"]}
+    assert ings["Terminalia chebula"] == "fruit" and ings["Piper nigrum"] == "fruit"
+    assert ings["Borax"] == "" and len(f["ingredients"]) == 6                       # non-plant ingredient kept, with empty part
+    assert "60 mg" in f["dosage"]
+
+
+def test_parse_therapeutics_page_returns_sorted_unique_uses():
+    uses = parse_therapeutics_page(read("imppat_therapeutics_Piper_nigrum.html"))
+    assert "anthelmintics" in uses and uses == sorted(set(uses)) and len(uses) >= 3
+
+
+def test_formulation_parsers_fail_soft_and_names_are_decoded():
+    assert parse_formulation_page("<html></html>") == {"id": "", "name": "", "ingredients": [], "dosage": ""}
+    assert parse_therapeutics_page("<html></html>") == []
+    html = '<a href="/imppat/afiformulationdetails/Abhay%C4%81 va%E1%B9%AD%C4%AB">x</a><a href="/imppat/apiformulationdetails/Triphala">y</a>'
+    assert formulation_names(html) == sorted(["Abhayā vaṭī", "Triphala"])
+
+
+def test_formulation_links_keep_the_afi_or_api_kind():
+    from ayurveda_kg.ingest.imppat import formulation_links
+    html = '<a href="/imppat/afiformulationdetails/A%20b">x</a><a href="/imppat/apiformulationdetails/C">y</a><a href="/imppat/afiformulationdetails/A%20b">dup</a>'
+    assert formulation_links(html) == [("afi", "A b"), ("api", "C")]

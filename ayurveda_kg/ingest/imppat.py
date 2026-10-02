@@ -112,3 +112,54 @@ def crawl_compounds(phy_ids, raw_dir, delay=1.0, session=None, manifest_path="da
     if manifest_path:
         _manifest.add_entry(manifest_path, "imppat_crawl_index", idx_path, BASE, LICENCE)
     return {"ok": ok, "failed": failed}
+
+
+# ---- formulations and therapeutic uses (Phase 5) ----
+def parse_formulation_page(html) -> dict:
+    """Ingredient list of one IMPPAT formulation. IMPPAT gives NO proportions, only ingredient name and plant part."""
+    soup = _soup(html)
+    text = re.sub(r"\s+", " ", soup.get_text(" ", strip=True))
+    ing = []
+    for table in soup.find_all("table"):
+        head = [th.get_text(" ", strip=True) for th in table.find_all("th")]
+        if head[:3] == ["Formulation name", "Ingredient name", "Plant part"]:
+            for tr in table.find_all("tr"):
+                c = _cells(tr)
+                if len(c) >= 2 and c[1]:
+                    ing.append({"ingredient": c[1], "part": c[2] if len(c) > 2 else ""})
+            break
+    ident = re.search(r"Formulation identifier:\s*([A-Z]+\d+)", text)
+    dose = re.search(r"Dosage \(according to ([^)]*)\):\s*(.*?)(?:\s+Ingredients of|$)", text)
+    name = ""
+    h = re.search(r"Ingredients of (.*?) Formulation name", text)
+    if h:
+        name = h.group(1).strip()
+    return {"id": ident.group(1) if ident else "", "name": name, "ingredients": ing,
+            "dosage": dose.group(2).strip() if dose else ""}
+
+
+def parse_therapeutics_page(html) -> list[str]:
+    """Therapeutic uses reported for one plant (IMPPAT 'therapeutics' page)."""
+    uses = []
+    for table in _soup(html).find_all("table"):
+        head = [th.get_text(" ", strip=True) for th in table.find_all("th")]
+        if any("Therapeutic use" in h for h in head):
+            col = next(i for i, h in enumerate(head) if "Therapeutic use" in h)
+            for tr in table.find_all("tr"):
+                c = _cells(tr)
+                if len(c) > col and c[col]:
+                    uses.append(c[col])
+    return sorted(set(uses))
+
+
+def formulation_names(home_html) -> list[str]:
+    """All formulation page names linked from the IMPPAT home page (AFI + API)."""
+    import html as _h
+    return sorted({_h.unescape(urllib.parse.unquote(m)) for m in re.findall(r"/imppat/(?:afi|api)formulationdetails/([^\"']+)", home_html)})
+
+
+def formulation_links(home_html) -> list[tuple[str, str]]:
+    """(kind, name) for every formulation page linked from the home page; kind is 'afi' (Ayurvedic Formulary) or 'api' (Pharmacopoeia)."""
+    import html as _h
+    found = re.findall(r"/imppat/(afi|api)formulationdetails/([^\"']+)", home_html)
+    return sorted({(k, _h.unescape(urllib.parse.unquote(n))) for k, n in found})
