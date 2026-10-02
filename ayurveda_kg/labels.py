@@ -48,3 +48,10 @@ def herb_drug_scores(labels: pd.DataFrame, contains: pd.DataFrame) -> pd.DataFra
     g = m.groupby(["herb", "drug"]).agg(n_pos=("pos", "sum"), n_labelled=("known", "sum"), n_compounds=("compound", "nunique")).reset_index()
     g["frac_pos"] = g["n_pos"] / g["n_labelled"].where(g["n_labelled"] > 0)
     return g
+
+
+def gold_vs_silver(gold: pd.DataFrame, scores: pd.DataFrame) -> pd.DataFrame:
+    """Attach the silver herb-drug score and its percentile (among all scored herb-drug pairs) to each gold pair."""
+    s = scores.assign(herb=scores["herb"].str.removeprefix("herb:"), drug=scores["drug"].str.removeprefix("drug:"))
+    s = s[s["n_labelled"] > 0].assign(percentile=lambda d: d["frac_pos"].rank(pct=True))
+    return gold.merge(s[["herb", "drug", "n_pos", "n_labelled", "frac_pos", "percentile"]], on=["herb", "drug"], how="left")

@@ -1,7 +1,7 @@
 # Project Context: Ayurvedic Knowledge Graph for Herb-Drug Interaction Prediction
 
 _Purpose of this file: a single, self-contained briefing that anyone (or any tool) can use to understand the project, then write a report, build slides, draft a paper section or answer questions, without reading the code. For live status see `progress.md`; for design detail see `docs/`._
-_State described: 2026-10-02 (Phases 0-2 complete, Phase 3 in progress). Numbers below are measured from the real build unless marked "planned"._
+_State described: 2026-10-02 (Phases 0-3 complete). Numbers below are measured from the real build unless marked "planned"._
 
 ---
 
@@ -21,7 +21,7 @@ Millions of people in India take Ayurvedic herbal medicines together with modern
 | # | Contribution | Status |
 |---|---|---|
 | C1 | A scoped, validated, source-attributed **Ayurvedic knowledge graph** linking herbs, compounds, targets/enzymes and drugs | **Built** (Phase 2) |
-| C2 | An **HDI predictor** (GNN link prediction) evaluated against baselines with leakage-safe splits and a literature gold set | Labels/splits in progress (Phase 3); models planned (Phase 4) |
+| C2 | An **HDI predictor** (GNN link prediction) evaluated against baselines with leakage-safe splits and a literature gold set | Labels, masking, splits and gold set **done** (Phase 3); models planned (Phase 4) |
 | C3 | A **safe-composition suggester**: choose compounds/ratios that minimise predicted interaction risk while keeping therapeutic coverage | Planned (Phase 5) |
 | C4 | **Ayurveda GraphRAG**: cited question answering over classical texts plus the same graph, compared to plain RAG | Planned (Phase 6) |
 | C5 | **Jivha (tongue/nail) and Nadi (pulse)** input producing a dosha estimate | Gated on a clinical partner + ethics approval (Phase 7) |
@@ -76,7 +76,7 @@ Scope is **fixed on purpose** (no expansion later): 20 herbs and 35 drugs.
 - A validator checks: no duplicate node IDs, no dangling edges, edge endpoint types match the schema, every scoped herb/drug present, herbs with no compounds flagged. Plausibility tests check known pharmacology (below).
 - Data hygiene lessons (see section 8): enzyme "families" such as ESTERASES are not gene nodes; ChEMBL alone covered only ~14 of 35 drugs' enzymes, so TDC labels and a cited supplement were added.
 
-### 6.2 HDI labels (Phase 3, in progress)
+### 6.2 HDI labels (Phase 3, done)
 - **Unit of prediction: (compound, drug)**, about 59,000 pairs. Herb-drug has only 20 x 35 = 700 pairs, too few to train or split; herb-level risk is aggregated afterwards.
 - **Silver label** (mechanistic, used for training), over five CYP enzymes (CYP1A2, 2C9, 2C19, 2D6, 3A4):
   - **1** = compound predicted to inhibit enzyme X **and** the drug is a substrate of X;
@@ -116,7 +116,7 @@ Compounds per herb range from 35 (Bacopa) to 343 (ginger); counts match IMPPAT's
 
 Plausibility checks that pass on the real graph: black pepper contains piperine and turmeric contains curcumin; piperine links to ABCB1/P-gp and to CYP1A2/2C9/2C19; licorice has the most predicted CYP3A4 inhibitors (78), consistent with its reputation; warfarin is a CYP2C9 substrate and simvastatin a CYP3A4 substrate.
 
-### 7.2 Silver labels (Phase 3, current)
+### 7.2 Silver labels (Phase 3, final)
 59,360 compound-drug pairs: **10,235 positive**, **33,071 negative**, **16,054 unlabelled**, no source conflicts; 785 compounds have at least one positive. Positives concentrate on drugs metabolised by many CYPs (warfarin, omeprazole, carbamazepine, diltiazem); drugs with no CYP route (metformin, aspirin, atenolol, furosemide, digoxin) have none, as expected.
 
 ### 7.3 Silver labels vs. the literature gold set (important honest finding)
@@ -132,6 +132,8 @@ Herb-level silver score = fraction of the herb's labelled compounds that are pos
 | Curcuma + tacrolimus (case-level evidence) | interaction | 0.11 | 44th | weak |
 | **Zingiber + warfarin** | **no interaction (RCT)** | **0.55** | **97th** | **silver false alarm** |
 | Allium sativum + warfarin | no interaction (RCT) | 0.29 | 72nd | silver false alarm (milder) |
+
+**Cold-herb folds (5 folds, 4 herbs held out each):** 108-303 compounds shared with training herbs are dropped per fold; test positives range from 412 to 3,373 per fold, so Phase 4 reports per-fold results. On the real graph, masking leaves 0 of 10,235 positives re-derivable.
 
 **Take-away:** predicted CYP inhibition by compounds is not the same as a clinical interaction (dose, absorption and exposure matter). Ginger has many predicted CYP2C9 inhibitors but did not change warfarin PK/PD in a human trial. The silver labels are therefore a *mechanistic hypothesis*, and the paper should evaluate against clinical gold and discuss this gap openly. The gold set is small (12 pairs, 2 negatives), so it supports a qualitative case study, not statistical claims. Possible mitigations (Phase 4+): weight by compound abundance/potency, use experimental bioactivity where available, calibrate against gold.
 
@@ -170,7 +172,7 @@ Venue undecided; built to a bioinformatics-journal standard (candidates: Briefin
 | 0 | Scaffold, manifest, downloader, access audit | Done |
 | 1 | Raw data for scoped herbs/drugs | Done |
 | 2 | Entity resolution + unified KG | Done |
-| 3 | HDI labels, leakage masking, splits, gold set | In progress (labels, masking, splits, gold + supplement done; run/report pending) |
+| 3 | HDI labels, leakage masking, splits, gold set | **Done** (`docs/labels_report.md`) |
 | 4 | Baselines, GNN, evaluation; Jivha/Nadi go/no-go | Not started |
 | 5 | Safe-composition optimiser | Not started |
 | 6 | GraphRAG + evaluation | Not started |
@@ -191,7 +193,7 @@ External dependencies: a domain advisor (Ayurveda expert/pharmacist) for gold-se
 
 **Figures worth drawing:** the architecture diagram; the KG schema (node/edge types); a worked example path *piperine -> CYP2C19 <- phenytoin*; a bar chart of compounds per herb; the gold-vs-silver percentile plot (section 7.3); a diagram of masked edges (what the model may and may not see).
 
-**Quotable numbers:** 20 herbs, 1,696 compounds, 35 drugs, 1,667 target genes; 11,947 compound-target edges; 59,360 labelled pairs (10,235 positive); 12-pair cited gold set; 85 automated tests (as of this writing); 3,392 pages crawled politely at 1 request/second.
+**Quotable numbers:** 20 herbs, 1,696 compounds, 35 drugs, 1,667 target genes; 11,947 compound-target edges; 59,360 labelled pairs (10,235 positive); 12-pair cited gold set; 90 automated tests (as of this writing); 3,392 pages crawled politely at 1 request/second.
 
 **Anticipated reviewer questions:** Why are labels not circular? (masking + herb-wise splits + clinical gold.) Is this clinically valid? (No; research score; gold shows false alarms.) Why only 20 herbs? (scope control; extensible via config.) Why not DrugBank? (licence gate; optional plug-in.) Can you release the data? (code + identifiers; IMPPAT licence forbids derivatives.) How do proportions get optimised without dose data? (risk proxy, hypothesis-generating, stated plainly.)
 

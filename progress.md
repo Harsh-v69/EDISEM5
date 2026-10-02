@@ -1,6 +1,6 @@
 # Project Progress (read this first)
 
-_Last updated: 2026-10-02 (Phases 0-2 complete; Phase 3 in progress). For a full project briefing (slides/reports) see `context.md`._ This file is written so someone with zero background can understand the project and where it stands._
+_Last updated: 2026-10-02 (Phases 0-3 complete). For a full project briefing (slides/reports) see `context.md`._ This file is written so someone with zero background can understand the project and where it stands._
 
 ## 1. What is this project?
 
@@ -52,17 +52,19 @@ How to run the checks: `.\.venv\Scripts\python -m pytest -q`
 | 0 | Scaffold, dataset manifest, polite downloader, data-access audit | **Done** |
 | 1 | Download raw data (IMPPAT, ChEMBL, DGIdb, DDInter, TDC), fix herb/drug scope | **Done**: 1,696 compounds crawled (3,392 pages, 0 missing), all drug-side data in `data/manifest.json` |
 | 2 | Resolve entities, build the unified KG | **Done**: 0 validation problems, 5 plausibility checks pass (see `docs/kg_report.md`) |
-| 3 | HDI labels (silver/gold), leak-safe splits | **In progress**: silver labels, edge masking, splits, 12-row cited gold set and substrate supplement built and tested; real-data run, report and final gate pending |
+| 3 | HDI labels (silver/gold), leak-safe splits | **Done**: 59,360 labelled pairs, masking proven on real data, cold-herb folds leak-free, 12-row cited gold set (see `docs/labels_report.md`) |
 | 4 | Baselines, GNN, evaluation; **Jivha/Nadi go/no-go** | Not started |
 | 5 | Safe-composition optimiser | Not started |
 | 6 | GraphRAG + evaluation | Not started |
 | 7 | Jivha/Nadi pipeline (only if go) | Not started |
 | 8 | Demo + paper drafts | Not started |
 
-Test suite: 85 automated tests, all passing (`.\.venv\Scripts\python -m pytest -q`).
+Test suite: 90 automated tests, all passing (`.\.venv\Scripts\python -m pytest -q`).
 
 ## 5. Log (newest first)
 
+- **2026-10-02, Phase 3 complete (gate passed).** Real-data gate: masking the label-source edges leaves 0 of 10,235 positives re-derivable; all 5 cold-herb folds are leak-free with every herb held out once (108-303 shared compounds dropped per fold, reported in `docs/labels_report.md`). Final silver labels: 10,235 positive / 33,071 negative / 16,054 unlabelled. Reproduce: `python -m ayurveda_kg.phase3`.
+  - **Two things Phase 4 must respect:** (1) the silver labels give false alarms against clinical gold (ginger-warfarin at the 97th percentile although a human trial found no interaction), so results must be reported against the gold set and the limitation stated; (2) the folds are very uneven (test positives range from 412 to 3,373 per fold because the ginger and licorice folds differ a lot), so report per-fold numbers, not just a mean.
 - **2026-10-02, Phase 3 (in progress).** Built and tested: silver labels at compound-drug level (rule in `docs/superpowers/plans/2026-10-02-phase3-labels-splits.md`), leakage masking (a test proves labels cannot be re-derived from the masked graph), cold-compound / cold-herb / cold-drug splits, herb-level aggregation, a 12-row **literature gold set** (each row read from the primary PubMed record or full-text passage via Europe PMC, marked pending expert review) and a cited substrate supplement for rivaroxaban, apixaban (FDA labels) and theophylline (PMID 7619675). Current silver labels: 59,360 pairs = 10,235 positive / 33,071 negative / 16,054 unlabelled.
   - **Honest finding:** silver labels agree with the literature for piperine (phenytoin, carbamazepine, propranolol, theophylline) and guggul (diltiazem, propranolol), and correctly miss the pharmacodynamic licorice-diuretic pairs, but give a **false alarm for ginger-warfarin** (human trial found no interaction; silver scores it at the 97th percentile) and a milder one for garlic-warfarin. Predicted CYP inhibition is a mechanistic hypothesis, not a clinical interaction. Details in `context.md` section 7.3.
   - Repo published to GitHub. IMPPAT-derived data and page excerpts are deliberately **not** committed (CC BY-NC-ND); fixture-based tests skip when those local files are absent.
@@ -94,6 +96,7 @@ Test suite: 85 automated tests, all passing (`.\.venv\Scripts\python -m pytest -
 
 ## 8. Next
 
-1. Phase 3 (needs its own short design decision, see findings above): silver labels from the KG at compound-drug level, gold labels from cited literature/case reports, leak-safe splits (see the leakage note in `docs/schema.md`).
-2. Gold-label curation needs a human check: a domain advisor or pharmacist should review the gold pairs.
-3. To rebuild the KG from cached raw files at any time: `.\.venv\Scripts\python -m ayurveda_kg.build` (no network needed).
+1. Phase 4: baselines (Random Forest, matrix factorisation) then GNN link predictor on the **masked** graph, evaluated on cold-herb / cold-compound / cold-drug splits with per-fold results, plus gold-set recall for the pharmacokinetic subset.
+2. Decide the **Jivha/Nadi go/no-go** at the end of Phase 4 (needs a clinical partner + ethics approval; otherwise future work).
+3. Human review still needed: the 12 gold pairs should be checked by a pharmacist or Ayurveda/pharmacology expert before any paper claims.
+4. To rebuild everything from cached raw files (no network): `python -m ayurveda_kg.build` then `python -m ayurveda_kg.phase3`.

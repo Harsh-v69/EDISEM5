@@ -71,3 +71,18 @@ def test_herb_drug_scores_counts_positive_and_labelled_compounds_only():
     assert s.loc[("herb:H", "a"), "frac_pos"] == 0.5
     assert s.loc[("herb:H", "b"), ["n_pos", "n_labelled"]].tolist() == [1, 3]
     assert s.loc[("herb:K", "a"), "n_labelled"] == 0 and pd.isna(s.loc[("herb:K", "a"), "frac_pos"])   # no evidence: NaN, not 0
+
+
+# ---- gold vs silver comparison ----
+from ayurveda_kg.labels import gold_vs_silver
+
+
+def test_gold_vs_silver_adds_score_and_percentile_among_all_scored_pairs():
+    scores = pd.DataFrame({"herb": ["herb:A", "herb:A", "herb:B", "herb:B"], "drug": ["drug:x", "drug:y", "drug:x", "drug:y"],
+                           "n_pos": [0, 1, 2, 4], "n_labelled": [4, 4, 4, 4], "n_compounds": [4] * 4,
+                           "frac_pos": [0.0, 0.25, 0.5, 1.0]})
+    gold = pd.DataFrame({"herb": ["A", "B", "A"], "drug": ["y", "x", "zz"], "label": [1, 0, 1], "mechanism": ["PK", "none", "PK"]})
+    out = gold_vs_silver(gold, scores).set_index(["herb", "drug"])
+    assert out.loc[("A", "y"), "frac_pos"] == 0.25 and out.loc[("A", "y"), "percentile"] == 0.5
+    assert out.loc[("B", "x"), "percentile"] == 0.75
+    assert pd.isna(out.loc[("A", "zz"), "frac_pos"])          # gold pair absent from the scores stays visible, as NaN
