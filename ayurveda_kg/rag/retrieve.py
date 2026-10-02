@@ -44,7 +44,8 @@ class HybridRetriever:
         items = []
         for i, e in enumerate(edges, 1):
             if e["relation"] == "co-mentioned":
-                text = f"{name(e['a'])} is co-mentioned with {name(e['b'])} in {e['weight']} passage(s) of the classical texts."
+                text = (f"{name(e['a'])} is co-mentioned with {name(e['b'])} in {e['weight']} passage(s) of the classical texts "
+                        "(co-occurrence only: this does not state that either affects the other).")
             else:
                 text = f"{name(e['a'])} {e['relation']} {name(e['b'])} (stated in {e['weight']} passage(s) of the classical texts)."
             items.append({"id": f"G{i}", "kind": "G", "text": text, "chunks": e["chunks"][:3], "source": "text graph"})

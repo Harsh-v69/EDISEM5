@@ -64,12 +64,13 @@ def parse_formulation_records(form_dir=RAW / "formulations", lookup=None) -> pd.
     return pd.DataFrame(rows, columns=["id", "name", "kind", "n_ingredients", "in_scope"])
 
 
-def build_problem(in_scope, n_ingredients, risk, drugs, uses, risk_col) -> dict:
+def build_problem(in_scope, n_ingredients, risk, drugs, uses, risk_col, pivot=None) -> dict:
     """Optimisation inputs for one formulation. Baseline = equal parts across ALL ingredients (IMPPAT gives no proportions: an assumption);
     out-of-scope ingredients have no risk data and stay fixed. A herb listed twice (e.g. two plant parts) counts with double share."""
     counts = pd.Series(in_scope).value_counts(sort=False)
     herbs = list(dict.fromkeys(in_scope))
-    r = risk.pivot(index="herb", columns="drug", values=risk_col).reindex(index=herbs, columns=drugs)
+    pivot = risk.pivot(index="herb", columns="drug", values=risk_col) if pivot is None else pivot     # pass a precomputed pivot in loops
+    r = pivot.reindex(index=herbs, columns=drugs)
     all_uses = sorted(set().union(*[uses.get(h, set()) for h in herbs]))
     A = np.array([[1.0 if u in uses.get(h, set()) else 0.0 for u in all_uses] for h in herbs])
     return {"herbs": herbs, "risk": r.to_numpy(float), "w0": np.array([counts[h] / n_ingredients for h in herbs]), "A": A, "uses": all_uses}
@@ -82,12 +83,16 @@ def run_scenarios(forms, risk, uses, drugs, risk_col="risk_rf", eval_col=None, t
     (Dirichlet) instead of equal parts, to test how much the unknown-proportions assumption matters."""
     rows = []
     rng = None if baseline_seed is None else np.random.default_rng(baseline_seed)
+    piv = risk.pivot(index="herb", columns="drug", values=risk_col)                     # pivot ONCE; the old per-scenario pivot made this very slow
+    piv_eval = risk.pivot(index="herb", columns="drug", values=eval_col) if eval_col else None
     for f in forms.itertuples():
         if len(set(f.in_scope)) < 2:
             continue
         draw = None if rng is None else rng.dirichlet(np.ones(f.n_ingredients))
-        for d in drugs:
-            p = build_problem(f.in_scope, f.n_ingredients, risk, [d], uses, risk_col)
+        base = build_problem(f.in_scope, f.n_ingredients, risk, list(drugs), uses, risk_col, pivot=piv)    # herb x all-drugs matrix, built once per formulation
+        eval_all = build_problem(f.in_scope, f.n_ingredients, risk, list(drugs), uses, eval_col, pivot=piv_eval)["risk"] if eval_col else None
+        for j, d in enumerate(drugs):
+            p = {**base, "risk": base["risk"][:, [j]]}
             if draw is not None:
                 p["w0"] = draw[:len(p["herbs"])]
             if np.isnan(p["risk"]).any():
@@ -100,7 +105,7 @@ def run_scenarios(forms, risk, uses, drugs, risk_col="risk_rf", eval_col=None, t
                    "n_removed": sum("removed" in x for x in r["flags"]),
                    "herbs": "; ".join(p["herbs"]), "w0": "; ".join(f"{x:.3f}" for x in r["w0"]), "w": "; ".join(f"{x:.3f}" for x in r["w"])}
             if eval_col:
-                q = build_problem(f.in_scope, f.n_ingredients, risk, [d], uses, eval_col)["risk"]
+                q = eval_all[:, [j]]
                 b, n = float(r["w0"] @ q[:, 0]), float(r["w"] @ q[:, 0])
                 row.update(eval_baseline=b, eval_new=n, eval_rel_reduction=1 - n / b if b > 0 else 0.0)
             rows.append(row)

@@ -56,23 +56,27 @@ def test_cooccurrence_edges_count_chunks_apply_min_count_and_keep_provenance():
     assert {(r["a"], r["b"]) for r in cooccurrence_edges(ents, min_count=1)} >= {("herb:A", "dosha:vata"), ("herb:B", "condition:x")}
 
 
-def test_run_extraction_is_resumable_skips_done_chunks_and_never_crashes_on_a_client_error(tmp_path):
+def test_run_extraction_is_resumable_retries_errored_chunks_and_never_crashes_on_a_client_error(tmp_path):
     chunks = [{"id": "c1", "text": PASSAGE}, {"id": "c2", "text": PASSAGE}, {"id": "c3", "text": PASSAGE}]
     calls = []
 
     def client(prompt):
         calls.append(prompt)
         if len(calls) == 2:
-            raise RuntimeError("model hiccup")
+            raise RuntimeError("model hiccup")                       # e.g. the local model server was down for a moment
         return raw(("Haridra", "treats", "skin disease"))
 
     out = tmp_path / "ex.jsonl"
     stats = run_extraction(chunks, LEX, client, out, limit=2)
-    assert stats["done"] == 2 and len(calls) == 2
-    stats = run_extraction(chunks, LEX, client, out, limit=None)                            # resume: c1 (ok) and c2 (error) were logged, only c3 is new
-    assert len(calls) == 3 and stats["errors"] >= 1
-    rows = [json.loads(l) for l in out.read_text(encoding="utf-8").splitlines()]
-    assert {r["chunk"] for r in rows} == {"c1", "c2", "c3"} and next(r for r in rows if r["chunk"] == "c2")["error"]
+    assert stats["done"] == 2 and stats["errors"] == 1 and len(calls) == 2           # c1 ok, c2 logged as an error, nothing crashed
+    stats = run_extraction(chunks, LEX, client, out, limit=None)                      # resume: c1 is skipped, c2 is RETRIED, c3 is new
+    assert len(calls) == 4 and stats["errors"] == 0 and stats["done"] == 3
+    final = {}
+    for l in out.read_text(encoding="utf-8").splitlines():
+        r = json.loads(l)
+        final[r["chunk"]] = r                                                           # last row per chunk wins
+    assert set(final) == {"c1", "c2", "c3"} and not any(r["error"] for r in final.values())
+    assert stats["accepted"] == 3                                                       # counted once per chunk, not once per attempt
 
 
 def test_reduce_verbs_map_to_treats_for_conditions_and_pacifies_for_doshas_with_the_raw_verb_kept():

@@ -86,10 +86,23 @@ def cooccurrence_edges(chunk_entities: dict, min_count=2) -> list[dict]:
             for (a, b), c in sorted(pairs.items()) if len(c) >= min_count]
 
 
+def load_triple_rows(path) -> list[dict]:
+    """Extraction rows, one per chunk (the LAST attempt wins, so a retried chunk replaces its earlier error row)."""
+    out = {}
+    p = Path(path)
+    if p.exists():
+        for line in p.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                r = json.loads(line)
+                out[r["chunk"]] = r
+    return list(out.values())
+
+
 def run_extraction(chunks, lexicon, client, out_path, limit=None, focus_fn=None) -> dict:
-    """Resumable: chunks already present in out_path (including logged errors) are skipped. A client error is logged, never fatal."""
+    """Resumable: chunks with a successful row are skipped; chunks whose last attempt ERRORED are retried (for example when the local
+    model server was down). A client error is logged, never fatal. `limit` caps the number of chunks attempted in this call."""
     out = Path(out_path)
-    done = {json.loads(l)["chunk"] for l in out.read_text(encoding="utf-8").splitlines()} if out.exists() else set()
+    done = {r["chunk"] for r in load_triple_rows(out) if not r["error"]}
     new = 0
     with out.open("a", encoding="utf-8") as f:
         for c in chunks:
@@ -105,7 +118,7 @@ def run_extraction(chunks, lexicon, client, out_path, limit=None, focus_fn=None)
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
             f.flush()
             new += 1
-    rows = [json.loads(l) for l in out.read_text(encoding="utf-8").splitlines()]
+    rows = load_triple_rows(out)
     return {"done": len(rows), "errors": sum(1 for r in rows if r["error"]), "accepted": sum(len(r["accepted"]) for r in rows),
             "rejected": sum(len(r["rejected"]) for r in rows)}
 

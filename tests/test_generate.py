@@ -52,3 +52,68 @@ def test_the_disclaimer_is_added_even_when_the_model_refuses_or_fails():
         raise RuntimeError("down")
     out = answer("q", ITEMS, boom)
     assert out["error"] and out["text"].endswith(DISCLAIMER)
+
+
+def test_kind_order_puts_kg_facts_before_graph_facts_before_passages_without_changing_ids():
+    items = [{"id": "P1", "kind": "P", "text": "passage text", "source": "S"}, {"id": "G1", "kind": "G", "text": "graph fact", "source": "g"},
+             {"id": "K1", "kind": "K", "text": "kg fact", "source": "k"}]
+    default = build_answer_prompt("q", items).split("SOURCES:")[1]          # the rules text above also mentions [P1]/[K1] as examples
+    kfirst = build_answer_prompt("q", items, kind_order="KGP").split("SOURCES:")[1]
+    assert default.index("[P1]") < default.index("[G1]") < default.index("[K1]")           # unchanged default: retrieval order
+    assert kfirst.index("[K1]") < kfirst.index("[G1]") < kfirst.index("[P1]")
+    assert "[K1]" in kfirst and "kg fact" in kfirst
+
+
+# ---- over-reading of co-occurrence facts, and the safety-question rule ----
+from ayurveda_kg.rag.generate import overclaim_flags
+
+COITEMS = [{"id": "G1", "kind": "G", "text": "turmeric is co-mentioned with pitta in 17 passages (co-occurrence only: this does not state that either affects the other).", "source": "g"},
+           {"id": "G2", "kind": "G", "text": "Piper nigrum treats cough (stated in 3 passage(s) of the classical texts).", "source": "g"},
+           {"id": "P1", "kind": "P", "text": "Haridra paste cures skin disease.", "source": "S"}]
+
+
+def test_prompt_forbids_inferring_a_relation_from_co_mention_and_asks_for_the_score_on_safety_questions():
+    p = build_answer_prompt("Is black pepper safe with phenytoin?", COITEMS)
+    assert "co-mentioned" in p and "do not infer" in p.lower()
+    assert "research risk score" in p and "never declare" in p.lower()
+
+
+def test_overclaim_flags_sentences_that_cite_only_co_mention_facts_but_state_a_therapeutic_role():
+    text = ("Turmeric is used for skin disease [P1]. Turmeric balances pitta [G1]. Turmeric appears alongside pitta in the texts [G1]. "
+            "Piper nigrum treats cough [G2]. It is a nice day [G1][P1].")
+    r = overclaim_flags(text, COITEMS)
+    assert r["n_cocite"] == 2 and r["n_overclaim"] == 1                      # only 'balances pitta [G1]' over-reads; the explicit 'treats' edge G2 and mixed citations are fine
+    assert overclaim_flags("No citations here.", COITEMS) == {"n_cocite": 0, "n_overclaim": 0}
+
+
+def test_answer_reports_the_overclaim_counts():
+    out = answer("q", COITEMS, lambda p: "Turmeric balances pitta [G1].")
+    assert out["overclaim"] == {"n_cocite": 1, "n_overclaim": 1}
+
+
+def test_extract_citations_expands_ranges_and_handles_mixed_lists():
+    assert extract_citations("Fine [G1-G4].") == ["G1", "G2", "G3", "G4"]
+    assert extract_citations("Fine [G1-4] and [P2, K1-K2].") == ["G1", "G2", "G3", "G4", "P2", "K1", "K2"]
+    assert extract_citations("Single [P1] and again [P1].") == ["P1"]
+    assert extract_citations("Reverse range [G4-G2] is ignored safely.") == ["G4"]
+
+
+def test_strict_rules_can_be_switched_off_for_the_before_after_comparison():
+    on = build_answer_prompt("q", COITEMS)
+    off = build_answer_prompt("q", COITEMS, strict_rules=False)
+    assert "co-mentioned' only means" in on and "research risk score" in on
+    assert "co-mentioned' only means" not in off and "never declare" not in off.lower()
+    assert NOT_ENOUGH in off and "[P1]" in off                                      # the core rules stay
+
+
+def test_overclaim_check_ignores_negated_or_hedged_sentences_that_deny_the_relation():
+    items = [{"id": "G1", "kind": "G", "text": "neem is co-mentioned with skin disease in 48 passages (co-occurrence only).", "source": "g"}]
+    hedged = ["They do not state that neem affects or treats skin disease [G1].",
+              "Neem is co-mentioned with skin disease, though co-occurrence does not imply treatment [G1].",
+              "No direct effect of neem on skin disease is stated [G1].",
+              "The texts never say neem cures skin disease [G1]."]
+    for s in hedged:
+        r = overclaim_flags(s, items)
+        assert r == {"n_cocite": 1, "n_overclaim": 0}, s                  # counted as a co-occurrence sentence, but NOT as an over-reading
+    assert overclaim_flags("Neem treats skin disease [G1].", items) == {"n_cocite": 1, "n_overclaim": 1}
+    assert overclaim_flags("Neem is an effective remedy for skin disease [G1].", items) == {"n_cocite": 1, "n_overclaim": 1}

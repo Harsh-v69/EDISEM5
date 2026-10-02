@@ -62,3 +62,31 @@ def test_expert_template_has_columns_for_the_advisor_and_a_draft_banner(tmp_path
     rows = list(csv.DictReader(open(p, encoding="utf-8")))
     assert rows[0]["question_id"] == "E1" and rows[0]["expected_answer"] == "" and rows[0]["rater"] == ""
     assert "DRAFT" in rows[0]["status"] and {"gold_source_ids", "notes"} <= set(rows[0])
+
+
+# ---- held-out question type and the targeted alias (vocabulary-gap) questions ----
+from ayurveda_kg.rag.evaluate import triple_questions
+
+
+def test_kg_questions_include_a_top_herbs_type_per_drug_with_latin_name_gold():
+    qs = kg_questions(RISK, SCOPE, pairs=[], include_top_herbs=True)
+    th = [q for q in qs if q["type"] == "top_herbs"]
+    assert {q["drug"] for q in th} == {"warfarin", "phenytoin", "aspirin", "digoxin", "simvastatin"}
+    p = next(q for q in th if q["drug"] == "phenytoin")
+    assert p["gold"] == ["Piper nigrum", "Curcuma longa"] and "phenytoin" in p["question"]
+    assert not any(q["type"] == "top_herbs" for q in kg_questions(RISK, SCOPE, pairs=[]))        # opt-in: existing question sets are unchanged
+
+
+def test_triple_questions_use_the_english_name_only_when_the_passage_does_not():
+    chunks = {"c1": {"id": "c1", "text": "Haridra applied as a paste cures skin disease."},
+              "c2": {"id": "c2", "text": "Turmeric (Haridra) is given for skin disease."},          # passage already says 'turmeric': no vocabulary gap, skip
+              "c3": {"id": "c3", "text": "Maricha relieves cough."}}
+    rows = [{"chunk": "c1", "accepted": [{"s": "herb:Curcuma longa", "r": "treats", "o": "condition:skin disease", "subject": "Haridra", "object": "skin disease"}]},
+            {"chunk": "c2", "accepted": [{"s": "herb:Curcuma longa", "r": "treats", "o": "condition:skin disease", "subject": "Haridra", "object": "skin disease"}]},
+            {"chunk": "c3", "accepted": [{"s": "herb:Piper nigrum", "r": "treats", "o": "condition:cough", "subject": "Maricha", "object": "cough"}]}]
+    qs = triple_questions(rows, chunks, SCOPE, n=10)
+    by = {q["id"]: q for q in qs}
+    turmeric = next(q for q in qs if "turmeric" in q["question"].lower())
+    assert turmeric["gold"] == ["c1"] and "skin disease" in turmeric["question"]                      # c2 excluded: it already contains 'turmeric'
+    assert any("black pepper" in q["question"].lower() and q["gold"] == ["c3"] for q in qs)
+    assert len({q["id"] for q in qs}) == len(qs)

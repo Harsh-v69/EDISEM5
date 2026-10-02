@@ -1,7 +1,7 @@
 # Project Context: Ayurvedic Knowledge Graph for Herb-Drug Interaction Prediction
 
 _Purpose of this file: a single, self-contained briefing that anyone (or any tool) can use to understand the project, then write a report, build slides, draft a paper section or answer questions, without reading the code. For live status see `progress.md`; for design detail see `docs/`._
-_State described: 2026-10-02 (Phases 0-4 complete). Numbers below are measured from the real build unless marked "planned"._
+_State described: 2026-10-03 (Phases 0-6 complete). Numbers below are measured from the real build unless marked "planned"._
 
 ---
 
@@ -22,8 +22,8 @@ Millions of people in India take Ayurvedic herbal medicines together with modern
 |---|---|---|
 | C1 | A scoped, validated, source-attributed **Ayurvedic knowledge graph** linking herbs, compounds, targets/enzymes and drugs | **Built** (Phase 2) |
 | C2 | An **HDI predictor** (GNN link prediction) evaluated against baselines with leakage-safe splits and a literature gold set | Labels, masking, splits, gold set (Phase 3) and baselines + GNN evaluation (Phase 4) **done**; see section 7.4 for the honest results |
-| C3 | A **safe-composition suggester**: choose compounds/ratios that minimise predicted interaction risk while keeping therapeutic coverage | Planned (Phase 5) |
-| C4 | **Ayurveda GraphRAG**: cited question answering over classical texts plus the same graph, compared to plain RAG | Planned (Phase 6) |
+| C3 | A **safe-composition suggester**: choose compounds/ratios that minimise predicted interaction risk while keeping therapeutic coverage | **Done** (Phase 5); see section 7.5 |
+| C4 | **Ayurveda GraphRAG**: cited question answering over classical texts plus the same graph, compared to plain RAG | **Done** (Phase 6) except expert verification; see section 7.6 |
 | C5 | **Jivha (tongue/nail) and Nadi (pulse)** input producing a dosha estimate | Gated on a clinical partner + ethics approval (Phase 7) |
 | C6 | An honest **methodology contribution**: how to build and evaluate HDI labels without circularity (label-source edge masking, herb-wise splits, verified gold set) | Designed and partly implemented |
 
@@ -89,10 +89,10 @@ Scope is **fixed on purpose** (no expansion later): 20 herbs and 35 drugs.
 ### 6.3 Models (Phase 4, done)
 Baselines first (Random Forest on engineered features; matrix factorisation) so there is something to beat; then GraphSAGE and/or Graph Attention Network link predictors in PyTorch Geometric on the masked graph. Metrics: AUROC, AUPRC, precision at top-k, recall on the gold set (reported separately for PK pairs, because a CYP-based model cannot predict pharmacodynamic interactions), K-fold with multiple seeds (mean +/- std). Compound chemistry (fingerprints) may be added as node features.
 
-### 6.4 Safe-composition suggester (Phase 5, planned)
+### 6.4 Safe-composition suggester (Phase 5, done)
 Constrained optimisation: given a formulation (set of herbs/compounds with proportions) and a patient's drug list, choose compounds and ratios that minimise aggregate predicted interaction risk subject to keeping therapeutic coverage (targets / dosha action of the original formulation) above a threshold and proportions summing to 1. Start with linear programming or greedy search. **Proportions are a risk proxy, not pharmacokinetics**, because no public dose-response data exists; outputs are hypothesis-generating. Validated against IMPPAT's real formulations (about 1,133).
 
-### 6.4b GraphRAG (Phase 6, planned)
+### 6.4b GraphRAG (Phase 6, done)
 Chunk classical texts (2-3 translated texts, public-domain/licensed only) into a vector index; extract entities/relations with a local LLM into the same graph (each edge keeps its source passage); hybrid retrieval merges vector hits with multi-hop graph traversal and re-ranks; a local model (AyurParam, benchmarked against a general open LLM) answers with inline citations. Evaluated on 50-100 expert-verified questions for faithfulness, hallucination rate, retrieval precision/recall, against a plain-RAG baseline. **Needs a domain advisor.**
 
 ### 6.5 Jivha and Nadi (Phase 7, gated)
@@ -155,6 +155,20 @@ What this actually shows (state these plainly in any talk or paper):
 5. **Gold set:** both models inherit the silver false alarms (ginger-warfarin gets the top percentile, 1.00), and miss the pharmacodynamic licorice-diuretic pairs; they reproduce the mechanistic rule rather than clinical truth.
 Planned improvements before the paper: drug chemistry features, experimental ChEMBL CYP bioactivity as an independent label source, and a scaffold split.
 
+### 7.5 Safe-composition optimiser (Phase 5; `docs/phase5_results.md`)
+A linear program re-weights the in-scope herbs of a real IMPPAT formulation to lower the predicted interaction risk against one patient drug, keeping each herb's share within bounds of its baseline and every therapeutic use above a coverage floor. IMPPAT gives ingredients but **no proportions**, so the baseline is an assumed equal-parts split.
+- 1,573 formulations parsed; 777 contain at least one scoped herb; **529** contain two or more (the minimum for re-weighting). 18,515 scenarios (529 x 35 drugs), all solved.
+- Median risk reduction **3.7%** (90th percentile 6.6%): small, because scoped herbs are only ~20% of a typical formulation. Constraints verified: coverage never below the 0.80 floor, no herb below half its share. Looser constraints reach 9.3%; random baselines give 2.7%, so the finding survives the unknown-proportions assumption.
+- 57% of suggestions also improve under the independent silver risk (Spearman 0.61).
+- Case studies make the weakness visible: ginger and garlic with warfarin (human-trial negatives) are lowered just like piperine with phenytoin (a true positive), because the risk proxy has known false alarms. Output is a hypothesis, not a dosing recommendation.
+
+### 7.6 GraphRAG (Phase 6; `docs/phase6_results.md`)
+Corpus: Kaviratna *Charaka-Samhita* and Bhishagratna *Sushruta Samhita* (public-domain translations), 6,493 passages. Components: alias-aware entity lexicon, a text graph (211 co-occurrence edges plus 532 LLM-extracted triples accepted by a grounding check, 710 rejected), hybrid retrieval (dense + alias expansion + text graph + KG facts, rank-fused), citation-constrained generation with `qwen3:8b` (local), automatic faithfulness proxies, and a disclaimer appended by code.
+- **Retrieval (60 synthetic questions):** graph facts lift recall@5 0.450 to 0.533. **Vocabulary gap** (English herb name in the question, Sanskrit name in the passage): recall@5 plain 0.017, alias 0.067, graph 0.083, alias+graph 0.167: a large relative gain but still weak.
+- **KG-grounded questions (graph advantage by construction):** full system answers 83% of risk-score questions, 75% of top-drugs and 97% of held-out top-herbs questions; plain RAG correctly refuses (0%).
+- **Honest findings:** a small local model sometimes refuses despite having the answer; putting KG facts first in the prompt was worse, not better; the model turned "co-mentioned" into "balances" until the wording and prompt were fixed (1 of 16 sentences over-read before, 0 of 17 after; small samples); an irrelevant passage can still be blended into an answer, which the automatic proxy cannot see. An early automatic check wrongly reported the fix as harmful because it ignored negation; it was repaired and recounted.
+- **Not claimed:** correctness on real questions. The expert-verified question set (template ready) and the AyurParam comparison (not approved for download) are pending.
+
 ## 8. Data-quality bugs found by checking real data (not just unit tests)
 1. Drug lookup returned a duplicate ChEMBL entry instead of the parent molecule (theophylline).
 2. Enzyme families (ESTERASES, UGT) were created as fake "gene" nodes.
@@ -192,8 +206,8 @@ Venue undecided; built to a bioinformatics-journal standard (candidates: Briefin
 | 2 | Entity resolution + unified KG | Done |
 | 3 | HDI labels, leakage masking, splits, gold set | **Done** (`docs/labels_report.md`) |
 | 4 | Baselines, GNN, evaluation; Jivha/Nadi go/no-go | **Done** (`docs/phase4_results.md`); go/no-go awaits the project owner |
-| 5 | Safe-composition optimiser | Not started |
-| 6 | GraphRAG + evaluation | Not started |
+| 5 | Safe-composition optimiser | **Done** (`docs/phase5_results.md`) |
+| 6 | GraphRAG + evaluation | **Done** (`docs/phase6_results.md`); expert question set pending |
 | 7 | Jivha/Nadi pipeline (if go) | Not started |
 | 8 | Demo + paper drafts | Not started |
 
@@ -211,7 +225,7 @@ External dependencies: a domain advisor (Ayurveda expert/pharmacist) for gold-se
 
 **Figures worth drawing:** the architecture diagram; the KG schema (node/edge types); a worked example path *piperine -> CYP2C19 <- phenytoin*; a bar chart of compounds per herb; the gold-vs-silver percentile plot (section 7.3); a diagram of masked edges (what the model may and may not see).
 
-**Quotable numbers:** 20 herbs, 1,696 compounds, 35 drugs, 1,667 target genes; 11,947 compound-target edges; 59,360 labelled pairs (10,235 positive); 12-pair cited gold set; 118 automated tests (as of this writing); 3,392 pages crawled politely at 1 request/second.
+**Quotable numbers:** 529 re-weightable real formulations, median 3.7% modelled risk reduction; 6,493 passages, vocabulary-gap recall@5 0.017 to 0.167 with alias+graph; 20 herbs, 1,696 compounds, 35 drugs, 1,667 target genes; 11,947 compound-target edges; 59,360 labelled pairs (10,235 positive); 12-pair cited gold set; 211 automated tests (as of this writing); 3,392 pages crawled politely at 1 request/second.
 
 **Anticipated reviewer questions:** Does the graph help? (No: GNN = MLP; an honest negative result.) Are cold-drug numbers inflated? (Pooled yes; drug-side AUROC is reported separately.) Why are labels not circular? (masking + herb-wise splits + clinical gold.) Is this clinically valid? (No; research score; gold shows false alarms.) Why only 20 herbs? (scope control; extensible via config.) Why not DrugBank? (licence gate; optional plug-in.) Can you release the data? (code + identifiers; IMPPAT licence forbids derivatives.) How do proportions get optimised without dose data? (risk proxy, hypothesis-generating, stated plainly.)
 

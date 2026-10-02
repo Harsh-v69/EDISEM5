@@ -50,3 +50,20 @@ def test_run_scenarios_only_optimises_formulations_with_two_or_more_in_scope_her
     assert (out["objective"] <= out["baseline_objective"] + 1e-9).all() and (out["rel_reduction"] >= -1e-9).all()
     assert {"eval_baseline", "eval_new", "eval_rel_reduction", "min_coverage_ratio", "status"} <= set(out.columns)
     assert (out["status"] == "optimal").all()
+
+
+def test_precomputed_pivot_gives_identical_problem_and_scenarios_match_the_slow_path():
+    pivot = RISK.pivot(index="herb", columns="drug", values="risk_rf")
+    a = build_problem(["A", "B"], 4, RISK, ["x", "y"], USES, "risk_rf")
+    b = build_problem(["A", "B"], 4, RISK, ["x", "y"], USES, "risk_rf", pivot=pivot)
+    assert a["risk"].tolist() == b["risk"].tolist() and a["w0"].tolist() == b["w0"].tolist() and a["A"].tolist() == b["A"].tolist()
+    forms = pd.DataFrame([{"id": "F1", "name": "n1", "kind": "afi", "n_ingredients": 3, "in_scope": ["A", "B"]},
+                          {"id": "F3", "name": "n3", "kind": "api", "n_ingredients": 4, "in_scope": ["A", "B", "C"]}])
+    out = run_scenarios(forms, RISK, USES, ["x", "y"], risk_col="risk_rf", eval_col="risk_silver", tau=0.5)
+    # recompute each scenario independently through the plain build_problem path and compare objectives
+    from ayurveda_kg.compose import optimise
+    for r in out.itertuples():
+        f = forms[forms.id == r.formulation_id].iloc[0]
+        p = build_problem(f.in_scope, f.n_ingredients, RISK, [r.drug], USES, "risk_rf")
+        o = optimise(p["risk"], p["w0"], A=p["A"], tau=0.5)
+        assert r.objective == pytest.approx(o["objective"]) and r.baseline_objective == pytest.approx(o["baseline_objective"])

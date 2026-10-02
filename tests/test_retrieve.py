@@ -98,3 +98,9 @@ def test_kg_facts_for_a_single_herb_list_the_highest_risk_drugs_and_unknown_enti
     f = KGFacts(RISK)
     assert "phenytoin" in f.facts(["herb:Piper nigrum"])[0]["text"]
     assert f.facts(["dosha:kapha"]) == [] and f.facts([]) == []
+
+
+def test_co_mention_graph_facts_state_that_they_are_co_occurrence_only():
+    r = make(use_alias=False, use_graph=True, use_kg=False)
+    g = [i for i in r.retrieve("Which remedies are linked with skin disease?", k_passages=2) if i["kind"] == "G"]
+    assert g and "co-mentioned" in g[0]["text"] and "co-occurrence only" in g[0]["text"]

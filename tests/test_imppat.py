@@ -126,3 +126,17 @@ def test_formulation_links_keep_the_afi_or_api_kind():
     from ayurveda_kg.ingest.imppat import formulation_links
     html = '<a href="/imppat/afiformulationdetails/A%20b">x</a><a href="/imppat/apiformulationdetails/C">y</a><a href="/imppat/afiformulationdetails/A%20b">dup</a>'
     assert formulation_links(html) == [("afi", "A b"), ("api", "C")]
+
+
+def test_parse_formulation_page_handles_the_pharmacopoeia_api_layout_with_columns_found_by_header():
+    # synthetic page in the real API layout: the identifier is a table column, and there is no 'Ingredients of ...' sentence
+    html = ('<html><body><table><thead><tr><th>Formulation name</th><th>Formulation identifier</th><th>Ingredient name</th><th>Plant part</th>'
+            '<th>References</th></tr></thead><tbody>'
+            '<tr><td>Triphala test</td><td>API000999</td><td>Terminalia chebula</td><td>fruit</td><td>ISBN:1</td></tr>'
+            '<tr><td>Triphala test</td><td>API000999</td><td>Phyllanthus emblica</td><td>fruit</td><td>ISBN:1</td></tr></tbody></table>'
+            '<div>Dosage (according to The Ayurvedic Pharmacopoeia of India): Churna (powder): 3-6 g Ayurvedic principles of drug action Rasa (Taste) '
+            + "x " * 400 + '</div></body></html>')
+    f = parse_formulation_page(html)
+    assert f["id"] == "API000999" and f["name"] == "Triphala test"
+    assert [(i["ingredient"], i["part"]) for i in f["ingredients"]] == [("Terminalia chebula", "fruit"), ("Phyllanthus emblica", "fruit")]
+    assert "3-6 g" in f["dosage"] and len(f["dosage"]) <= 200 and "Ayurvedic principles" not in f["dosage"]

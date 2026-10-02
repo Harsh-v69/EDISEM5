@@ -116,26 +116,31 @@ def crawl_compounds(phy_ids, raw_dir, delay=1.0, session=None, manifest_path="da
 
 # ---- formulations and therapeutic uses (Phase 5) ----
 def parse_formulation_page(html) -> dict:
-    """Ingredient list of one IMPPAT formulation. IMPPAT gives NO proportions, only ingredient name and plant part."""
+    """Ingredient list of one IMPPAT formulation (AFI or API page). IMPPAT gives NO proportions, only ingredient name and plant part.
+    Columns are located by header name, because the two page layouts differ (API pages carry the identifier as a table column)."""
     soup = _soup(html)
     text = re.sub(r"\s+", " ", soup.get_text(" ", strip=True))
-    ing = []
+    ing, name, ident_cell = [], "", ""
     for table in soup.find_all("table"):
         head = [th.get_text(" ", strip=True) for th in table.find_all("th")]
-        if head[:3] == ["Formulation name", "Ingredient name", "Plant part"]:
+        if "Formulation name" in head and "Ingredient name" in head:
+            ci, pi = head.index("Ingredient name"), (head.index("Plant part") if "Plant part" in head else None)
+            ni = head.index("Formulation name")
+            ii = head.index("Formulation identifier") if "Formulation identifier" in head else None
             for tr in table.find_all("tr"):
                 c = _cells(tr)
-                if len(c) >= 2 and c[1]:
-                    ing.append({"ingredient": c[1], "part": c[2] if len(c) > 2 else ""})
+                if len(c) > ci and c[ci]:
+                    ing.append({"ingredient": c[ci], "part": c[pi] if pi is not None and len(c) > pi else ""})
+                    name = name or (c[ni] if len(c) > ni else "")
+                    ident_cell = ident_cell or (c[ii] if ii is not None and len(c) > ii else "")
             break
     ident = re.search(r"Formulation identifier:\s*([A-Z]+\d+)", text)
-    dose = re.search(r"Dosage \(according to ([^)]*)\):\s*(.*?)(?:\s+Ingredients of|$)", text)
-    name = ""
+    dose = re.search(r"Dosage \(according to ([^)]*)\):\s*(.*?)(?:\s+Ingredients of|\s+Ayurvedic principles|$)", text)
     h = re.search(r"Ingredients of (.*?) Formulation name", text)
     if h:
         name = h.group(1).strip()
-    return {"id": ident.group(1) if ident else "", "name": name, "ingredients": ing,
-            "dosage": dose.group(2).strip() if dose else ""}
+    return {"id": ident.group(1) if ident else ident_cell, "name": name, "ingredients": ing,
+            "dosage": dose.group(2).strip()[:200] if dose else ""}
 
 
 def parse_therapeutics_page(html) -> list[str]:

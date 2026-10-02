@@ -10,21 +10,38 @@ STOP = set("this that with from have been were will would could should their the
            "when where what while about after before because between both each other some only over very more most like used uses using".split())
 
 
-def build_answer_prompt(question: str, items: list[dict]) -> str:
+def build_answer_prompt(question: str, items: list[dict], kind_order: str = None, strict_rules: bool = True) -> str:
+    """kind_order e.g. "KGP" puts knowledge-graph facts first, then text-graph facts, then passages (ids are unchanged).
+    strict_rules=False drops the two rules added after the first evaluation run (co-mention caution, safety-question rule); it exists only
+    so the before/after comparison in the report can be reproduced."""
+    if kind_order:
+        items = sorted(items, key=lambda i: kind_order.index(i["kind"]) if i["kind"] in kind_order else len(kind_order))
     src = "\n".join(f"[{i['id']}] ({i['source']}) {i['text']}" for i in items) if items else "(no sources were retrieved)"
+    extra = ("- A source that says two things are 'co-mentioned' only means they appear together in a passage; do not infer that one treats, balances or affects the other.\n"
+             "- For interaction or safety questions: if a [K] source gives a research risk score, report that score and say it is a research hypothesis; never declare a combination safe or unsafe.\n"
+             ) if strict_rules else ""
     return ("You answer questions about Ayurveda using ONLY the numbered sources below.\n"
             "Rules:\n"
             "- Use only information stated in the sources. Do not add outside knowledge.\n"
             "- After every claim, cite the source id in square brackets, for example [P1] or [K1].\n"
             f"- If the sources do not contain the answer, reply exactly: {NOT_ENOUGH}\n"
+            + extra +
             "- Be concise (at most 120 words). Do not give medical advice or dosing.\n\n"
             f"SOURCES:\n{src}\n\nQUESTION: {question}\nANSWER:")
 
 
 def extract_citations(text: str) -> list[str]:
+    """Ids cited in square brackets, in order, deduplicated. Lists ([P2, K1]) and ranges ([G1-G4], [G1-4]) are expanded."""
     out = []
-    for grp in re.findall(r"\[([A-Z]\d+(?:\s*,\s*[A-Z]\d+)*)\]", text):
-        out += [x.strip() for x in grp.split(",")]
+    for grp in re.findall(r"\[([A-Z]\d+(?:\s*[-,]\s*[A-Z]?\d+)*)\]", text):
+        for tok in grp.split(","):
+            tok = tok.strip()
+            m = re.fullmatch(r"([A-Z])(\d+)\s*-\s*[A-Z]?(\d+)", tok)
+            if m:
+                a, b = int(m.group(2)), int(m.group(3))
+                out += [f"{m.group(1)}{n}" for n in range(a, b + 1)] if a <= b else [f"{m.group(1)}{a}"]
+            else:
+                out.append(tok)
     return list(dict.fromkeys(out))
 
 
@@ -55,10 +72,29 @@ def sentence_support(sentence: str, texts: list[str]) -> float:
     return len(cw & src) / len(cw)
 
 
-def answer(question: str, items: list[dict], client) -> dict:
+CLAIM = re.compile(r"\b(balanc\w*|treat\w*|cure\w*|heal\w*|relie\w*|pacif\w*|role in|benefici\w*|therap\w*|remed\w*|used (?:for|to|in))\b", re.I)
+
+
+NEG = re.compile(r"\b(not|no|never|neither|nor|without|cannot)\b|n't", re.I)      # a sentence that denies the relation is a hedge, not an over-reading
+
+
+def overclaim_flags(text: str, items: list[dict]) -> dict:
+    """Sentences that cite ONLY co-occurrence facts: how many, and how many of them nevertheless state a therapeutic role (an over-reading)."""
+    by_id = {i["id"]: i for i in items}
+    n_co = n_over = 0
+    for s in _sentences(text):
+        cites = [c for c in extract_citations(s) if c in by_id]
+        if cites and all(by_id[c]["kind"] == "G" and "co-mentioned" in by_id[c]["text"] for c in cites):
+            n_co += 1
+            body = re.sub(r"\[[^\]]*\]", " ", s)
+            n_over += bool(CLAIM.search(body) and not NEG.search(body))
+    return {"n_cocite": n_co, "n_overclaim": n_over}
+
+
+def answer(question: str, items: list[dict], client, kind_order: str = None, strict_rules: bool = True) -> dict:
     """client(prompt) -> text. Never raises: a model failure is reported in `error`."""
     try:
-        model_text, error = client(build_answer_prompt(question, items)).strip(), ""
+        model_text, error = client(build_answer_prompt(question, items, kind_order, strict_rules)).strip(), ""
     except Exception as e:
         model_text, error = "", f"{type(e).__name__}: {e}"
     by_id = {i["id"]: i["text"] for i in items}
@@ -72,7 +108,7 @@ def answer(question: str, items: list[dict], client) -> dict:
     shown = model_text if model_text else "(the model was unavailable)"
     return {"text": f"{shown}\n\n{DISCLAIMER}", "model_text": model_text, "checks": check_citations(model_text, items),
             "support": {"rate": sum(v >= 0.5 for v in per) / len(per) if per else float("nan"), "n": len(per), "mean": sum(per) / len(per) if per else float("nan")},
-            "refused": NOT_ENOUGH in model_text, "error": error}
+            "refused": NOT_ENOUGH in model_text, "overclaim": overclaim_flags(model_text, items), "error": error}
 
 
 def ollama_text_client(model="qwen3:8b", host="http://127.0.0.1:11434", timeout=900, num_predict=350):

@@ -17,7 +17,7 @@ def _strip_citations(text: str) -> str:
     return re.sub(r"\[[^\]]*\]", " ", text)
 
 
-def kg_questions(risk: pd.DataFrame, scope: dict, pairs, top_k=3) -> list[dict]:
+def kg_questions(risk: pd.DataFrame, scope: dict, pairs, top_k=3, include_top_herbs=False) -> list[dict]:
     """Questions whose gold answers come straight from the project's herb-drug risk table."""
     common = {h["imppat_name"]: (h.get("common") or h["imppat_name"]) for h in scope["herbs"]}
     qs = []
@@ -30,6 +30,11 @@ def kg_questions(risk: pd.DataFrame, scope: dict, pairs, top_k=3) -> list[dict]:
         if len(row):
             qs.append({"id": f"KG-pair-{i}", "type": "pair_score", "herb": herb, "drug": drug, "gold": float(row["risk_rf"].iloc[0]),
                        "question": f"What is the research risk score for {common[herb]} with {drug}?"})
+    if include_top_herbs:
+        for drug in sorted(risk["drug"].unique()):
+            top = risk[risk["drug"] == drug].sort_values(["risk_rf", "herb"], ascending=[False, True]).head(top_k)["herb"].tolist()
+            qs.append({"id": f"KG-herbs-{drug}", "type": "top_herbs", "drug": drug, "gold": top,
+                       "question": f"According to the project's research risk scores, which {top_k} herbs have the highest predicted interaction risk with {drug}?"})
     return qs
 
 
@@ -80,6 +85,26 @@ def make_retrieval_questions(chunks: list[dict], client, n=60, seed=0) -> list[d
         if q and not too_verbatim(q, c["text"]):
             out.append({"id": f"RQ-{len(out):03d}", "question": q, "gold": [c["id"]]})
     return out
+
+
+def triple_questions(rows, chunks: dict, scope: dict, n=60) -> list[dict]:
+    """Retrieval questions that test the vocabulary gap: they name the herb by its English common name while the supporting passage
+    (found by grounded triple extraction) does not use that name or the Latin name. Gold = the passages supporting the triple."""
+    common = {f"herb:{h['imppat_name']}": ((h.get("common") or h["imppat_name"]).lower(), h["imppat_name"].lower()) for h in scope["herbs"]}
+    support = {}
+    for r in rows:
+        text = chunks[r["chunk"]]["text"].lower() if r["chunk"] in chunks else ""
+        for t in r.get("accepted", []):
+            if t["r"] != "treats" or t["s"] not in common or not t["o"].startswith("condition:"):
+                continue
+            eng, latin = common[t["s"]]
+            if re.search(r"(?<![a-z])" + re.escape(eng) + r"(?![a-z])", text) or latin in text:
+                continue                                        # the passage already uses the English/Latin name: no vocabulary gap
+            support.setdefault((t["s"], t["o"]), []).append(r["chunk"])
+    keys = sorted(support, key=lambda k: (-len(support[k]), k))[:n]
+    return [{"id": f"TQ-{i:03d}", "herb": h, "condition": c,
+             "question": f"What does the classical text say about {common[h][0]} for {c.split(':', 1)[1]}?",
+             "gold": list(dict.fromkeys(support[(h, c)]))} for i, (h, c) in enumerate(keys)]
 
 
 def retrieval_eval(questions: list[dict], rankers: dict, ks=(5, 10)) -> pd.DataFrame:
