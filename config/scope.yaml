@@ -1,0 +1,61 @@
+# Fixed project scope. Herbs are named as IMPPAT names them; aliases are other names in common use.
+# Chosen: herbs commonly co-used with conventional drugs in India and/or with documented interaction concern.
+herbs:
+  - {imppat_name: Curcuma longa, aliases: [Turmeric, Haridra], common: turmeric}
+  - {imppat_name: Withania somnifera, aliases: [Ashwagandha], common: ashwagandha}
+  - {imppat_name: Glycyrrhiza glabra, aliases: [Licorice, Yashtimadhu], common: licorice}
+  - {imppat_name: Zingiber officinale, aliases: [Ginger, Shunthi], common: ginger}
+  - {imppat_name: Allium sativum, aliases: [Garlic, Lasuna], common: garlic}
+  - {imppat_name: Piper nigrum, aliases: [Black pepper, Maricha], common: black pepper}
+  - {imppat_name: Trigonella foenum-graecum, aliases: [Fenugreek, Methi], common: fenugreek}
+  - {imppat_name: Momordica charantia, aliases: [Bitter gourd, Karela], common: bitter gourd}
+  - {imppat_name: Tinospora sinensis, aliases: [Tinospora cordifolia, Guduchi, Giloy], common: guduchi}
+  - {imppat_name: Bacopa monnieri, aliases: [Brahmi], common: brahmi}
+  - {imppat_name: Ocimum tenuiflorum, aliases: [Ocimum sanctum, Tulsi, Holy basil], common: tulsi}
+  - {imppat_name: Commiphora wightii, aliases: [Commiphora mukul, Guggul], common: guggul}
+  - {imppat_name: Boswellia serrata, aliases: [Shallaki, Indian frankincense], common: boswellia}
+  - {imppat_name: Gymnema sylvestre, aliases: [Gurmar], common: gymnema}
+  - {imppat_name: Azadirachta indica, aliases: [Neem, Nimba], common: neem}
+  - {imppat_name: Andrographis paniculata, aliases: [Kalmegh], common: kalmegh}
+  - {imppat_name: Centella asiatica, aliases: [Mandukaparni, Gotu kola], common: gotu kola}
+  - {imppat_name: Phyllanthus emblica, aliases: [Emblica officinalis, Amla], common: amla}
+  - {imppat_name: Terminalia chebula, aliases: [Haritaki], common: haritaki}
+  - {imppat_name: Rauvolfia serpentina, aliases: [Sarpagandha], common: sarpagandha}
+
+# Drug classes: those Ayurveda users commonly take alongside (LASI 2025: diabetes, hypertension, reflux, arthritis).
+drugs:
+  - {name: warfarin, cls: anticoagulant}
+  - {name: clopidogrel, cls: antiplatelet}
+  - {name: aspirin, cls: antiplatelet}
+  - {name: rivaroxaban, cls: anticoagulant}
+  - {name: apixaban, cls: anticoagulant}
+  - {name: metformin, cls: antidiabetic}
+  - {name: glibenclamide, cls: antidiabetic}
+  - {name: glimepiride, cls: antidiabetic}
+  - {name: gliclazide, cls: antidiabetic}
+  - {name: pioglitazone, cls: antidiabetic}
+  - {name: sitagliptin, cls: antidiabetic}
+  - {name: amlodipine, cls: antihypertensive}
+  - {name: nifedipine, cls: antihypertensive}
+  - {name: diltiazem, cls: antihypertensive}
+  - {name: verapamil, cls: antihypertensive}
+  - {name: atenolol, cls: antihypertensive}
+  - {name: propranolol, cls: antihypertensive}
+  - {name: metoprolol, cls: antihypertensive}
+  - {name: losartan, cls: antihypertensive}
+  - {name: enalapril, cls: antihypertensive}
+  - {name: hydrochlorothiazide, cls: diuretic}
+  - {name: furosemide, cls: diuretic}
+  - {name: atorvastatin, cls: statin}
+  - {name: simvastatin, cls: statin}
+  - {name: rosuvastatin, cls: statin}
+  - {name: levothyroxine, cls: thyroid}
+  - {name: cyclosporine, cls: immunosuppressant}
+  - {name: tacrolimus, cls: immunosuppressant}
+  - {name: digoxin, cls: cardiac_glycoside}
+  - {name: omeprazole, cls: proton_pump_inhibitor}
+  - {name: theophylline, cls: bronchodilator}
+  - {name: carbamazepine, cls: anticonvulsant}
+  - {name: phenytoin, cls: anticonvulsant}
+  - {name: alprazolam, cls: benzodiazepine}
+  - {name: diclofenac, cls: nsaid}

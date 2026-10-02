@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+runs/
+
+# IMPPAT is CC BY-NC-ND: raw pages, derived tables and page excerpts must not be redistributed.
+# Regenerate with: python -m ayurveda_kg.ingest.crawl_imppat  then  python -m ayurveda_kg.build
+data/raw/
+data/processed/
+data/crawl.log
+tests/fixtures/imppat_*.html

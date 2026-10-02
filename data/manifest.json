@@ -1,0 +1,380 @@
+{
+  "chembl_metabolism_0": {
+    "fetched_at": "2026-09-30T21:03:23+00:00",
+    "file": "data\\raw\\chembl\\metabolism_0.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "49b0396b225db820804136d24f73b953fe3d7f9850d26feecd9f280367b0960c",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/metabolism.json?limit=1000&offset=0"
+  },
+  "chembl_metabolism_1000": {
+    "fetched_at": "2026-09-30T21:03:33+00:00",
+    "file": "data\\raw\\chembl\\metabolism_1000.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "72078e56e01525200fcda6903756e4d2230d320e883d4bd00206197a03bf9b1c",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/metabolism.json?limit=1000&offset=1000"
+  },
+  "chembl_metabolism_2000": {
+    "fetched_at": "2026-09-30T21:03:35+00:00",
+    "file": "data\\raw\\chembl\\metabolism_2000.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "67987bbc95d3552930c34f347a31298cacbcb1aa137ddeddcd5257ee68929155",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/metabolism.json?limit=1000&offset=2000"
+  },
+  "chembl_search_alprazolam": {
+    "fetched_at": "2026-09-30T21:05:08+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\alprazolam.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "f903c874196da5fa8f30354919370f521bd288144a094fed5be1fd16ac71e9c9",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=alprazolam&limit=20"
+  },
+  "chembl_search_amlodipine": {
+    "fetched_at": "2026-09-30T21:04:26+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\amlodipine.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "b93a520a982b62ababd27f9cd54a99a492fb5596658ab91787f3fb5b8a5bd9eb",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=amlodipine&limit=20"
+  },
+  "chembl_search_apixaban": {
+    "fetched_at": "2026-09-30T21:04:15+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\apixaban.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "f80b4ccb8322afaad83a86cc86b231512b87c1b928b68e13622b2094d1aeeb08",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=apixaban&limit=20"
+  },
+  "chembl_search_aspirin": {
+    "fetched_at": "2026-09-30T21:04:12+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\aspirin.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "b5716d22bcc12071434ca961f4ce1114df31e284fea13e7ae91401f78943f833",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=aspirin&limit=20"
+  },
+  "chembl_search_atenolol": {
+    "fetched_at": "2026-09-30T21:04:34+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\atenolol.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "7e9331ca2fbc8370bcd0172cf3c2733e5bec0fb845dfef8a710cff4c2c077984",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=atenolol&limit=20"
+  },
+  "chembl_search_atorvastatin": {
+    "fetched_at": "2026-09-30T21:04:47+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\atorvastatin.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "838a9ec0d7748da2c6502b84fb37f4fd6b523d46b62d150d1890d5fa9f226ada",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=atorvastatin&limit=20"
+  },
+  "chembl_search_carbamazepine": {
+    "fetched_at": "2026-09-30T21:05:05+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\carbamazepine.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "1ea069e6bd9ef90ad32ab982f3cdfb020b89d319c81bf7b0a0d63f64844d69aa",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=carbamazepine&limit=20"
+  },
+  "chembl_search_clopidogrel": {
+    "fetched_at": "2026-09-30T21:04:10+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\clopidogrel.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "e344304c8de923a6d75db5423101b7c4b4fbc2135e605ca6c5d1a45429966a83",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=clopidogrel&limit=20"
+  },
+  "chembl_search_cyclosporine": {
+    "fetched_at": "2026-09-30T21:04:54+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\cyclosporine.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "6a636d2419c8f5b55d1720a82389f31e4e9a4e9c37159cdd29e95c8f5637055a",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=cyclosporine&limit=20"
+  },
+  "chembl_search_diclofenac": {
+    "fetched_at": "2026-09-30T21:05:10+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\diclofenac.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "8d5fcd6f2376759f2c63756e6df2d8dfcb33e60d3daea4599942088777722c40",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=diclofenac&limit=20"
+  },
+  "chembl_search_digoxin": {
+    "fetched_at": "2026-09-30T21:04:59+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\digoxin.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "3d03eca05eb1be78f7350ec9082d2af4cc3467ac60bb0910f8df89a9be1d8a1a",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=digoxin&limit=20"
+  },
+  "chembl_search_diltiazem": {
+    "fetched_at": "2026-09-30T21:04:30+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\diltiazem.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "8013b5de562a23e2541ca4ddfe35081d0a303136a8729fc08ef4d08c399bfd16",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=diltiazem&limit=20"
+  },
+  "chembl_search_enalapril": {
+    "fetched_at": "2026-09-30T21:04:42+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\enalapril.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "730fbe64d1ad6d557aed5ac9d7ed624b618a3d4f38a6ebc73aaee7d0a2f5e8e6",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=enalapril&limit=20"
+  },
+  "chembl_search_furosemide": {
+    "fetched_at": "2026-09-30T21:04:45+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\furosemide.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "672186256a74b3e6e0048afc4c16534c109ad806be0fd628f6d40baaeeb85520",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=furosemide&limit=20"
+  },
+  "chembl_search_glibenclamide": {
+    "fetched_at": "2026-09-30T21:04:19+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\glibenclamide.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "f1e7f8a156796965f50c2c4d1e6d5ae2435e4936be5035fe8f69da30ef99db66",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=glibenclamide&limit=20"
+  },
+  "chembl_search_gliclazide": {
+    "fetched_at": "2026-09-30T21:04:22+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\gliclazide.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "2d7e56b0033a92ad9ce7ee4bd778bea33d23751118bd35fa91e54e7126d0e400",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=gliclazide&limit=20"
+  },
+  "chembl_search_glimepiride": {
+    "fetched_at": "2026-09-30T21:04:20+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\glimepiride.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "9bac6bb50d227b4bb87991d9a14ae503dca4d603cc6b4649fc1f55106759092f",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=glimepiride&limit=20"
+  },
+  "chembl_search_hydrochlorothiazide": {
+    "fetched_at": "2026-09-30T21:04:43+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\hydrochlorothiazide.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "dc510d894db59290f07c07cc55c8f2640fd1d4a770b91d8a690acb1e2fd27353",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=hydrochlorothiazide&limit=20"
+  },
+  "chembl_search_levothyroxine": {
+    "fetched_at": "2026-09-30T21:04:52+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\levothyroxine.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "a2e61fdf46b183fe34e20f4ee1838bf393308003176b9268a785c5f289f85506",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=levothyroxine&limit=20"
+  },
+  "chembl_search_losartan": {
+    "fetched_at": "2026-09-30T21:04:40+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\losartan.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "871fe3322a095c2447197ce3df393b0cf4a03f564347ad43b1d3c809782bfbde",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=losartan&limit=20"
+  },
+  "chembl_search_metformin": {
+    "fetched_at": "2026-09-30T21:04:17+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\metformin.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "5d0a22a5fb5e7298f62062aa10b4321eda043f27d15bdb26d68ba6a65732e3c4",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=metformin&limit=20"
+  },
+  "chembl_search_metoprolol": {
+    "fetched_at": "2026-09-30T21:04:38+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\metoprolol.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "ff02415224402e53f3a6b5b5f0ad3083b9a4223c1aa9f4b987d5ea8e84cdce05",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=metoprolol&limit=20"
+  },
+  "chembl_search_nifedipine": {
+    "fetched_at": "2026-09-30T21:04:28+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\nifedipine.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "234cf982991fcf33aeae878702db14fdf5b126b492c633c5b4fa8ac0027223c4",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=nifedipine&limit=20"
+  },
+  "chembl_search_omeprazole": {
+    "fetched_at": "2026-09-30T21:05:01+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\omeprazole.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "25a448cb3c509fad9094c2dea9f1345fd1c0fb76813b29ac838b4efe4cb162d2",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=omeprazole&limit=20"
+  },
+  "chembl_search_phenytoin": {
+    "fetched_at": "2026-09-30T21:05:07+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\phenytoin.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "70122ef25aaeca66310ad8b7b4089db0a064c5bd25f649e6530517032cf45756",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=phenytoin&limit=20"
+  },
+  "chembl_search_pioglitazone": {
+    "fetched_at": "2026-09-30T21:04:23+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\pioglitazone.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "1a1f72150a03b65776edd6cb4d9274f53556d702a1eee236e6dd9bed4927998a",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=pioglitazone&limit=20"
+  },
+  "chembl_search_propranolol": {
+    "fetched_at": "2026-09-30T21:04:36+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\propranolol.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "6ffee7daa178ba3a2da91ef6140d63345dbf99d6fbf33f715d84b94c992858fa",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=propranolol&limit=20"
+  },
+  "chembl_search_rivaroxaban": {
+    "fetched_at": "2026-09-30T21:04:13+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\rivaroxaban.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "efda335edef98a1704887938a62de9fa5d7566f451ce6d7277e20e0c8143fb8c",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=rivaroxaban&limit=20"
+  },
+  "chembl_search_rosuvastatin": {
+    "fetched_at": "2026-09-30T21:04:50+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\rosuvastatin.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "0ff9176a8ae9fe52f3c8467a2c1d93a6b35f2133d6f57e38da487e7374248b9d",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=rosuvastatin&limit=20"
+  },
+  "chembl_search_simvastatin": {
+    "fetched_at": "2026-09-30T21:04:48+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\simvastatin.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "ac6aba0d414dd4445e490810b1f89a557c7e2e0ca720681e98287431637a7493",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=simvastatin&limit=20"
+  },
+  "chembl_search_sitagliptin": {
+    "fetched_at": "2026-09-30T21:04:25+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\sitagliptin.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "4f4cbf3072afc98b4a736d4895b1c316b8591b58145541d81352a1d3891eb48c",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=sitagliptin&limit=20"
+  },
+  "chembl_search_tacrolimus": {
+    "fetched_at": "2026-09-30T21:04:56+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\tacrolimus.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "6d8a0915abce5be5417131cfa2672626b79fe6588a263d8d7eb9e0673c3cbf65",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=tacrolimus&limit=20"
+  },
+  "chembl_search_theophylline": {
+    "fetched_at": "2026-09-30T21:05:03+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\theophylline.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "8d13010a6d3dbb24991c8c9f34b4725db978c2bafcf9cb4118328c1127833d89",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=theophylline&limit=20"
+  },
+  "chembl_search_verapamil": {
+    "fetched_at": "2026-09-30T21:04:32+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\verapamil.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "624e29eeb32d4eefcc4b80c2355db92f56b651437ab070a921408faf5c0b6a22",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=verapamil&limit=20"
+  },
+  "chembl_search_warfarin": {
+    "fetched_at": "2026-09-30T21:04:08+00:00",
+    "file": "data\\raw\\chembl\\molecule_search\\warfarin.json",
+    "licence": "ChEMBL CC BY-SA 3.0",
+    "sha256": "ffbd89994264a7b4444fe540d8c5ff33fb879588b4e2cb90c97b623ecdda5ef7",
+    "source_url": "https://www.ebi.ac.uk/chembl/api/data/molecule/search.json?q=warfarin&limit=20"
+  },
+  "ddinter_A": {
+    "fetched_at": "2026-09-30T21:00:13+00:00",
+    "file": "data\\raw\\ddinter\\ddinter_code_A.csv",
+    "licence": "DDInter 2.0 public; cite",
+    "sha256": "a22ca451d2b755ca2331886f7e00540c86f555f9f55704a59a19c691251f52e0",
+    "source_url": "https://ddinter2.scbdd.com/static/media/download/ddinter_downloads_code_A.csv"
+  },
+  "ddinter_B": {
+    "fetched_at": "2026-09-30T21:00:18+00:00",
+    "file": "data\\raw\\ddinter\\ddinter_code_B.csv",
+    "licence": "DDInter 2.0 public; cite",
+    "sha256": "76de5115a55587f0e822e1096b684fd3ddde058fbefcbb19896df58820ace130",
+    "source_url": "https://ddinter2.scbdd.com/static/media/download/ddinter_downloads_code_B.csv"
+  },
+  "ddinter_D": {
+    "fetched_at": "2026-09-30T21:00:24+00:00",
+    "file": "data\\raw\\ddinter\\ddinter_code_D.csv",
+    "licence": "DDInter 2.0 public; cite",
+    "sha256": "c0627ec39965dbe27829e4934cd20d71eb079f4e373287678737bba9423a306a",
+    "source_url": "https://ddinter2.scbdd.com/static/media/download/ddinter_downloads_code_D.csv"
+  },
+  "ddinter_H": {
+    "fetched_at": "2026-09-30T21:00:28+00:00",
+    "file": "data\\raw\\ddinter\\ddinter_code_H.csv",
+    "licence": "DDInter 2.0 public; cite",
+    "sha256": "f0f925f0ba1ee68c4668d3e7a6732719b34623b22a0f5d017f9090e59f63c88e",
+    "source_url": "https://ddinter2.scbdd.com/static/media/download/ddinter_downloads_code_H.csv"
+  },
+  "ddinter_L": {
+    "fetched_at": "2026-09-30T21:00:38+00:00",
+    "file": "data\\raw\\ddinter\\ddinter_code_L.csv",
+    "licence": "DDInter 2.0 public; cite",
+    "sha256": "f54f4486cc00344f8c86508c31c2ca3fad6d1d37ec3af5bcf609b4bbda5507ef",
+    "source_url": "https://ddinter2.scbdd.com/static/media/download/ddinter_downloads_code_L.csv"
+  },
+  "ddinter_P": {
+    "fetched_at": "2026-09-30T21:00:41+00:00",
+    "file": "data\\raw\\ddinter\\ddinter_code_P.csv",
+    "licence": "DDInter 2.0 public; cite",
+    "sha256": "83f8c0edb20d09ef29b8500b48f9623e208379525688ade9e70a7df2d8749d55",
+    "source_url": "https://ddinter2.scbdd.com/static/media/download/ddinter_downloads_code_P.csv"
+  },
+  "ddinter_R": {
+    "fetched_at": "2026-09-30T21:00:47+00:00",
+    "file": "data\\raw\\ddinter\\ddinter_code_R.csv",
+    "licence": "DDInter 2.0 public; cite",
+    "sha256": "1c39c3d4a6e41659b7a988538d7f363867592abc6f41a815de8746f6e2150574",
+    "source_url": "https://ddinter2.scbdd.com/static/media/download/ddinter_downloads_code_R.csv"
+  },
+  "ddinter_V": {
+    "fetched_at": "2026-09-30T21:00:51+00:00",
+    "file": "data\\raw\\ddinter\\ddinter_code_V.csv",
+    "licence": "DDInter 2.0 public; cite",
+    "sha256": "353973fb300453946aea95733e8fb52338e4b59426d2ce6ca318363d4f84f10a",
+    "source_url": "https://ddinter2.scbdd.com/static/media/download/ddinter_downloads_code_V.csv"
+  },
+  "dgidb_drugs": {
+    "fetched_at": "2026-09-30T20:59:59+00:00",
+    "file": "data\\raw\\dgidb\\drugs.tsv",
+    "licence": "DGIdb open (CC BY 4.0)",
+    "sha256": "f939ee92621125dbfca8bdae23d2086605405b8274190fc69e39104c614142d2",
+    "source_url": "https://dgidb.org/data/latest/drugs.tsv"
+  },
+  "dgidb_genes": {
+    "fetched_at": "2026-09-30T21:00:04+00:00",
+    "file": "data\\raw\\dgidb\\genes.tsv",
+    "licence": "DGIdb open (CC BY 4.0)",
+    "sha256": "f090a58280b7f410e9e68b75bb6ea0c00c439c2ed10182eb58a46b6e2583825d",
+    "source_url": "https://dgidb.org/data/latest/genes.tsv"
+  },
+  "dgidb_interactions": {
+    "fetched_at": "2026-09-30T20:59:50+00:00",
+    "file": "data\\raw\\dgidb\\interactions.tsv",
+    "licence": "DGIdb open (CC BY 4.0)",
+    "sha256": "08af778126a4f22a10fddb7fe06745df07f068ce76c016fe22c59c524ef3de9c",
+    "source_url": "https://dgidb.org/data/latest/interactions.tsv"
+  },
+  "imppat_crawl_index": {
+    "fetched_at": "2026-09-30T23:00:59+00:00",
+    "file": "data\\raw\\imppat\\crawl_index.tsv",
+    "licence": "CC BY-NC-ND 4.0 (IMSc); do not redistribute",
+    "sha256": "bbf768c90672d23121b98d1566fc4e24a289e89661248774716ae58260dde0c8",
+    "source_url": "https://cb.imsc.res.in/imppat/"
+  },
+  "smoke_curcumin": {
+    "fetched_at": "2026-09-30T20:49:48+00:00",
+    "file": "data\\raw\\smoke\\curcumin.json",
+    "licence": "PubChem open",
+    "sha256": "eb22ebc57779aaf56896456a9b2ae11d2cd079fd00dba6c29922803873e7bd5c",
+    "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/curcumin/property/InChIKey/JSON"
+  },
+  "tdc_CYP2C9_substrate": {
+    "fetched_at": "2026-09-30T21:09:40+00:00",
+    "file": "data\\raw\\tdc_cyp\\CYP2C9_substrate_carbonmangels.tab",
+    "licence": "TDC / Carbon-Mangels & Hutter 2011; cite both",
+    "sha256": "a4b3d458cbca8cb74850464b15d5ab1f64787ea346cc38eedae29a388412f041",
+    "source_url": "https://dataverse.harvard.edu/api/access/datafile/4259584"
+  },
+  "tdc_CYP2D6_substrate": {
+    "fetched_at": "2026-09-30T21:09:44+00:00",
+    "file": "data\\raw\\tdc_cyp\\CYP2D6_substrate_carbonmangels.tab",
+    "licence": "TDC / Carbon-Mangels & Hutter 2011; cite both",
+    "sha256": "6eab25986d9a65595140447940f46d134ffd6c7c3fca3f25b5aaabcc30aa57d5",
+    "source_url": "https://dataverse.harvard.edu/api/access/datafile/4259578"
+  },
+  "tdc_CYP3A4_substrate": {
+    "fetched_at": "2026-09-30T21:09:48+00:00",
+    "file": "data\\raw\\tdc_cyp\\CYP3A4_substrate_carbonmangels.tab",
+    "licence": "TDC / Carbon-Mangels & Hutter 2011; cite both",
+    "sha256": "678341b7e40630a70b4e38b20e22dc73fbd8aff13fdd32cd7f6d702b62b5005e",
+    "source_url": "https://dataverse.harvard.edu/api/access/datafile/4259581"
+  }
+}
