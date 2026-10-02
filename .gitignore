@@ -8,5 +8,5 @@ runs/
 # Regenerate with: python -m ayurveda_kg.ingest.crawl_imppat  then  python -m ayurveda_kg.build
 data/raw/
 data/processed/
-data/crawl.log
+data/*.log
 tests/fixtures/imppat_*.html

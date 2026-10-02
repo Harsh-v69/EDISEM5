@@ -1,6 +1,6 @@
 # Project Progress (read this first)
 
-_Last updated: 2026-10-02 (Phases 0-3 complete). For a full project briefing (slides/reports) see `context.md`._ This file is written so someone with zero background can understand the project and where it stands._
+_Last updated: 2026-10-02 (Phases 0-4 complete; Jivha/Nadi go/no-go pending your decision). For a full project briefing (slides/reports) see `context.md`._ This file is written so someone with zero background can understand the project and where it stands._
 
 ## 1. What is this project?
 
@@ -53,16 +53,22 @@ How to run the checks: `.\.venv\Scripts\python -m pytest -q`
 | 1 | Download raw data (IMPPAT, ChEMBL, DGIdb, DDInter, TDC), fix herb/drug scope | **Done**: 1,696 compounds crawled (3,392 pages, 0 missing), all drug-side data in `data/manifest.json` |
 | 2 | Resolve entities, build the unified KG | **Done**: 0 validation problems, 5 plausibility checks pass (see `docs/kg_report.md`) |
 | 3 | HDI labels (silver/gold), leak-safe splits | **Done**: 59,360 labelled pairs, masking proven on real data, cold-herb folds leak-free, 12-row cited gold set (see `docs/labels_report.md`) |
-| 4 | Baselines, GNN, evaluation; **Jivha/Nadi go/no-go** | Not started |
+| 4 | Baselines, GNN, evaluation; **Jivha/Nadi go/no-go** | **Done** (`docs/phase4_results.md`): RF beats GNN on every cold split; graph structure adds nothing over node features; drug-side generalisation weak. **Go/no-go decision still needs you** |
 | 5 | Safe-composition optimiser | Not started |
 | 6 | GraphRAG + evaluation | Not started |
 | 7 | Jivha/Nadi pipeline (only if go) | Not started |
 | 8 | Demo + paper drafts | Not started |
 
-Test suite: 90 automated tests, all passing (`.\.venv\Scripts\python -m pytest -q`).
+Test suite: 118 automated tests, all passing (`.\.venv\Scripts\python -m pytest -q`).
 
 ## 5. Log (newest first)
 
+- **2026-10-02, Phase 4 complete.** Models (prior, matrix factorisation, Random Forest, hetero-GraphSAGE GNN, and a no-message-passing MLP ablation) trained on the **masked** graph and evaluated on 5-fold cold-compound, cold-herb, cold-drug and (inflated reference) random-pair splits; GNN/MLP use 3 seeds. Everything is in `docs/phase4_results.md` (reproduce: `python -m ayurveda_kg.phase4` then `python -m ayurveda_kg.phase4_report`; the run is resumable).
+  - **Headline numbers (mean AUROC over folds):** cold-compound RF 0.945 (GNN 0.903, prior 0.714); cold-herb RF 0.885 +/- 0.052 (GNN 0.837, prior 0.704; folds range 0.795-0.930); cold-drug pooled RF 0.985 (GNN 0.969).
+  - **What the grouped metrics revealed (checked after the pooled score looked too good):** cold-drug pooled AUROC is almost entirely *compound-side* skill (within-drug 0.989). *Drug-side* skill on unseen drugs (ranking drugs for a compound) is only 0.72 for RF, 0.60 for MLP and 0.53 (chance) for the GNN. So the models know which compounds look like CYP inhibitors but barely generalise to new drugs.
+  - **Graph structure adds nothing:** GNN minus MLP (same network, 0 graph layers) = -0.003 (cold-compound), -0.005 (cold-herb), +0.014 (cold-drug, pooled; drug-side is worse). The GNN is not under-trained: five configurations gave validation AUROC 0.895-0.900 and test 0.91-0.92 on two folds (differences within noise), so we kept defaults rather than tuning.
+  - **Leakage ablation:** the same RF with the unmasked CYP features reaches 0.998 / 0.999 / 0.997 AUROC (cold-compound / herb / drug) vs 0.945 / 0.885 / 0.985 masked, i.e. +0.053 / +0.114 / +0.012 inflation. This is the evidence that masking matters.
+  - **Gold set:** both models inherit the silver false alarms: ginger-warfarin (a human-trial negative) gets the top percentile (1.00) from both models, above the median PK positive. Honest reading: the models reproduce the mechanistic silver rule; they do not predict clinical interactions better than silver does.
 - **2026-10-02, Phase 3 complete (gate passed).** Real-data gate: masking the label-source edges leaves 0 of 10,235 positives re-derivable; all 5 cold-herb folds are leak-free with every herb held out once (108-303 shared compounds dropped per fold, reported in `docs/labels_report.md`). Final silver labels: 10,235 positive / 33,071 negative / 16,054 unlabelled. Reproduce: `python -m ayurveda_kg.phase3`.
   - **Two things Phase 4 must respect:** (1) the silver labels give false alarms against clinical gold (ginger-warfarin at the 97th percentile although a human trial found no interaction), so results must be reported against the gold set and the limitation stated; (2) the folds are very uneven (test positives range from 412 to 3,373 per fold because the ginger and licorice folds differ a lot), so report per-fold numbers, not just a mean.
 - **2026-10-02, Phase 3 (in progress).** Built and tested: silver labels at compound-drug level (rule in `docs/superpowers/plans/2026-10-02-phase3-labels-splits.md`), leakage masking (a test proves labels cannot be re-derived from the masked graph), cold-compound / cold-herb / cold-drug splits, herb-level aggregation, a 12-row **literature gold set** (each row read from the primary PubMed record or full-text passage via Europe PMC, marked pending expert review) and a cited substrate supplement for rivaroxaban, apixaban (FDA labels) and theophylline (PMID 7619675). Current silver labels: 59,360 pairs = 10,235 positive / 33,071 negative / 16,054 unlabelled.
@@ -96,7 +102,8 @@ Test suite: 90 automated tests, all passing (`.\.venv\Scripts\python -m pytest -
 
 ## 8. Next
 
-1. Phase 4: baselines (Random Forest, matrix factorisation) then GNN link predictor on the **masked** graph, evaluated on cold-herb / cold-compound / cold-drug splits with per-fold results, plus gold-set recall for the pharmacokinetic subset.
-2. Decide the **Jivha/Nadi go/no-go** at the end of Phase 4 (needs a clinical partner + ethics approval; otherwise future work).
-3. Human review still needed: the 12 gold pairs should be checked by a pharmacist or Ayurveda/pharmacology expert before any paper claims.
-4. To rebuild everything from cached raw files (no network): `python -m ayurveda_kg.build` then `python -m ayurveda_kg.phase3`.
+1. **Decision for you (Jivha/Nadi go/no-go):** do you have, or can you secure within about two weeks, a clinical partner (BAMS college/clinic) and ethics approval for tongue/nail/pulse data? If yes, Phase 7 gets a real data-collection pipeline; if not, Jivha/Nadi stays a designed-but-stubbed module and appears in the paper as future work. (Phases 5 and 6 do not depend on it.)
+2. Before Phase 5, strengthen the weakest link: **drug-side generalisation** and **experimental (not predicted) CYP evidence**. Ideas: add drug chemistry fingerprints (ChEMBL SMILES), add ChEMBL experimental CYP-inhibition bioactivity for compounds that have ChEMBL IDs, and report results with and without SwissADME-derived labels.
+3. Phase 5: safe-composition optimiser (uses the compound-level risk model from Phase 4; limitations above apply). Phase 6: GraphRAG.
+4. Human review still needed: the 12 gold pairs (pharmacist/Ayurveda expert).
+5. Rebuild everything from cached raw files (no network): `python -m ayurveda_kg.build`, `python -m ayurveda_kg.phase3`, `python -m ayurveda_kg.phase4`, `python -m ayurveda_kg.phase4_report`.

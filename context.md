@@ -1,7 +1,7 @@
 # Project Context: Ayurvedic Knowledge Graph for Herb-Drug Interaction Prediction
 
 _Purpose of this file: a single, self-contained briefing that anyone (or any tool) can use to understand the project, then write a report, build slides, draft a paper section or answer questions, without reading the code. For live status see `progress.md`; for design detail see `docs/`._
-_State described: 2026-10-02 (Phases 0-3 complete). Numbers below are measured from the real build unless marked "planned"._
+_State described: 2026-10-02 (Phases 0-4 complete). Numbers below are measured from the real build unless marked "planned"._
 
 ---
 
@@ -21,7 +21,7 @@ Millions of people in India take Ayurvedic herbal medicines together with modern
 | # | Contribution | Status |
 |---|---|---|
 | C1 | A scoped, validated, source-attributed **Ayurvedic knowledge graph** linking herbs, compounds, targets/enzymes and drugs | **Built** (Phase 2) |
-| C2 | An **HDI predictor** (GNN link prediction) evaluated against baselines with leakage-safe splits and a literature gold set | Labels, masking, splits and gold set **done** (Phase 3); models planned (Phase 4) |
+| C2 | An **HDI predictor** (GNN link prediction) evaluated against baselines with leakage-safe splits and a literature gold set | Labels, masking, splits, gold set (Phase 3) and baselines + GNN evaluation (Phase 4) **done**; see section 7.4 for the honest results |
 | C3 | A **safe-composition suggester**: choose compounds/ratios that minimise predicted interaction risk while keeping therapeutic coverage | Planned (Phase 5) |
 | C4 | **Ayurveda GraphRAG**: cited question answering over classical texts plus the same graph, compared to plain RAG | Planned (Phase 6) |
 | C5 | **Jivha (tongue/nail) and Nadi (pulse)** input producing a dosha estimate | Gated on a clinical partner + ethics approval (Phase 7) |
@@ -86,7 +86,7 @@ Scope is **fixed on purpose** (no expansion later): 20 herbs and 35 drugs.
 - **Leakage control (key methodological point):** the silver label is computed from CYP edges that are also in the graph, so a GNN could simply rediscover the rule. Before training, all label-source edges (`predicted_cyp_inhibitor`, `substrate_of`, `non_substrate_of`, plus any `modulates`/`targets` edge into the five CYPs) are removed, and a test proves labels cannot be re-derived from the masked graph.
 - **Splits:** cold-compound K-fold; cold-herb hold-out (test compounds belong only to held-out herbs; compounds shared with training herbs are dropped and counted); cold-drug folds; a random-pair split is provided only as a labelled "inflated" reference. Note: cold-compound still lets close chemical analogues straddle folds; a scaffold split is a Phase 4 option.
 
-### 6.3 Models (Phase 4, planned)
+### 6.3 Models (Phase 4, done)
 Baselines first (Random Forest on engineered features; matrix factorisation) so there is something to beat; then GraphSAGE and/or Graph Attention Network link predictors in PyTorch Geometric on the masked graph. Metrics: AUROC, AUPRC, precision at top-k, recall on the gold set (reported separately for PK pairs, because a CYP-based model cannot predict pharmacodynamic interactions), K-fold with multiple seeds (mean +/- std). Compound chemistry (fingerprints) may be added as node features.
 
 ### 6.4 Safe-composition suggester (Phase 5, planned)
@@ -137,6 +137,24 @@ Herb-level silver score = fraction of the herb's labelled compounds that are pos
 
 **Take-away:** predicted CYP inhibition by compounds is not the same as a clinical interaction (dose, absorption and exposure matter). Ginger has many predicted CYP2C9 inhibitors but did not change warfarin PK/PD in a human trial. The silver labels are therefore a *mechanistic hypothesis*, and the paper should evaluate against clinical gold and discuss this gap openly. The gold set is small (12 pairs, 2 negatives), so it supports a qualitative case study, not statistical claims. Possible mitigations (Phase 4+): weight by compound abundance/potency, use experimental bioactivity where available, calibrate against gold.
 
+### 7.4 Model results (Phase 4; `docs/phase4_results.md`)
+Models: prior (per-drug base rate), matrix factorisation (reference only), Random Forest on chemistry + non-CYP targets + drug features, a heterogeneous GraphSAGE GNN, and the same network with **no message passing** (MLP ablation); a leakage-ablation RF given the unmasked CYP features. Mean AUROC over 5 folds (GNN/MLP: 3 seeds):
+
+| Split | prior | RF | MLP (no graph) | GNN | RF with leaked CYP features |
+|---|---|---|---|---|---|
+| cold-compound | 0.714 | **0.945** | 0.906 | 0.903 | 0.998 |
+| cold-herb (folds 0.795-0.930 for RF) | 0.704 | **0.885** | 0.842 | 0.837 | 0.999 |
+| cold-drug (pooled) | 0.500 | **0.985** | 0.955 | 0.969 | 0.997 |
+| random-pair (inflated reference) | 0.710 | 0.995 (MF 0.996) | 0.975 | 0.981 | 1.000 |
+
+What this actually shows (state these plainly in any talk or paper):
+1. **Compound-side skill is real:** chemistry plus targets predicts which unseen compounds look like CYP inhibitors (within-drug AUROC 0.94 cold-compound, 0.87 cold-herb). Caveat: the labels come from SwissADME predictions, which are themselves structure-derived, so this largely shows structure-to-predicted-activity learning, not new biology.
+2. **Drug-side generalisation is weak:** cold-drug pooled AUROC (0.985) is almost entirely compound-side. Ranking unseen drugs for a given compound gives only 0.72 (RF), 0.60 (MLP), 0.53 (GNN, chance level).
+3. **Graph structure adds nothing:** GNN minus MLP is -0.003, -0.005, +0.014 AUROC; the RF beats the GNN on every cold split. The GNN is not under-trained (several configurations gave the same validation AUROC).
+4. **Leakage is a large effect:** unmasked CYP features inflate AUROC by +0.05 (cold-compound), +0.11 (cold-herb), +0.01 (cold-drug), which is why edge masking and cold splits are essential.
+5. **Gold set:** both models inherit the silver false alarms (ginger-warfarin gets the top percentile, 1.00), and miss the pharmacodynamic licorice-diuretic pairs; they reproduce the mechanistic rule rather than clinical truth.
+Planned improvements before the paper: drug chemistry features, experimental ChEMBL CYP bioactivity as an independent label source, and a scaffold split.
+
 ## 8. Data-quality bugs found by checking real data (not just unit tests)
 1. Drug lookup returned a duplicate ChEMBL entry instead of the parent molecule (theophylline).
 2. Enzyme families (ESTERASES, UGT) were created as fake "gene" nodes.
@@ -173,7 +191,7 @@ Venue undecided; built to a bioinformatics-journal standard (candidates: Briefin
 | 1 | Raw data for scoped herbs/drugs | Done |
 | 2 | Entity resolution + unified KG | Done |
 | 3 | HDI labels, leakage masking, splits, gold set | **Done** (`docs/labels_report.md`) |
-| 4 | Baselines, GNN, evaluation; Jivha/Nadi go/no-go | Not started |
+| 4 | Baselines, GNN, evaluation; Jivha/Nadi go/no-go | **Done** (`docs/phase4_results.md`); go/no-go awaits the project owner |
 | 5 | Safe-composition optimiser | Not started |
 | 6 | GraphRAG + evaluation | Not started |
 | 7 | Jivha/Nadi pipeline (if go) | Not started |
@@ -193,9 +211,9 @@ External dependencies: a domain advisor (Ayurveda expert/pharmacist) for gold-se
 
 **Figures worth drawing:** the architecture diagram; the KG schema (node/edge types); a worked example path *piperine -> CYP2C19 <- phenytoin*; a bar chart of compounds per herb; the gold-vs-silver percentile plot (section 7.3); a diagram of masked edges (what the model may and may not see).
 
-**Quotable numbers:** 20 herbs, 1,696 compounds, 35 drugs, 1,667 target genes; 11,947 compound-target edges; 59,360 labelled pairs (10,235 positive); 12-pair cited gold set; 90 automated tests (as of this writing); 3,392 pages crawled politely at 1 request/second.
+**Quotable numbers:** 20 herbs, 1,696 compounds, 35 drugs, 1,667 target genes; 11,947 compound-target edges; 59,360 labelled pairs (10,235 positive); 12-pair cited gold set; 118 automated tests (as of this writing); 3,392 pages crawled politely at 1 request/second.
 
-**Anticipated reviewer questions:** Why are labels not circular? (masking + herb-wise splits + clinical gold.) Is this clinically valid? (No; research score; gold shows false alarms.) Why only 20 herbs? (scope control; extensible via config.) Why not DrugBank? (licence gate; optional plug-in.) Can you release the data? (code + identifiers; IMPPAT licence forbids derivatives.) How do proportions get optimised without dose data? (risk proxy, hypothesis-generating, stated plainly.)
+**Anticipated reviewer questions:** Does the graph help? (No: GNN = MLP; an honest negative result.) Are cold-drug numbers inflated? (Pooled yes; drug-side AUROC is reported separately.) Why are labels not circular? (masking + herb-wise splits + clinical gold.) Is this clinically valid? (No; research score; gold shows false alarms.) Why only 20 herbs? (scope control; extensible via config.) Why not DrugBank? (licence gate; optional plug-in.) Can you release the data? (code + identifiers; IMPPAT licence forbids derivatives.) How do proportions get optimised without dose data? (risk proxy, hypothesis-generating, stated plainly.)
 
 ## 15. Key verified references (read from primary records, 2026-10-02)
 - Bano G et al. 1991, Eur J Clin Pharmacol 41:615-617 (PMID 1815977): piperine raises propranolol and theophylline exposure.
