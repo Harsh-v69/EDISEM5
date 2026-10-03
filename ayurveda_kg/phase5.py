@@ -64,6 +64,17 @@ def parse_formulation_records(form_dir=RAW / "formulations", lookup=None) -> pd.
     return pd.DataFrame(rows, columns=["id", "name", "kind", "n_ingredients", "in_scope"])
 
 
+def load_formulation_records(cache=OUT / "formulations.parquet", form_dir=RAW / "formulations", lookup=None, refresh=False) -> pd.DataFrame:
+    """parse_formulation_records with an on-disk cache (parsing ~1,600 pages takes minutes). refresh=True re-parses."""
+    cache = Path(cache)
+    if cache.exists() and not refresh:
+        return pd.read_parquet(cache)
+    recs = parse_formulation_records(form_dir, lookup)
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    recs.to_parquet(cache, index=False)
+    return recs
+
+
 def build_problem(in_scope, n_ingredients, risk, drugs, uses, risk_col, pivot=None) -> dict:
     """Optimisation inputs for one formulation. Baseline = equal parts across ALL ingredients (IMPPAT gives no proportions: an assumption);
     out-of-scope ingredients have no risk data and stay fixed. A herb listed twice (e.g. two plant parts) counts with double share."""
@@ -139,7 +150,46 @@ def select_cases(main: pd.DataFrame, picks, per_pick=3) -> pd.DataFrame:
                                        "rel_reduction", "note"])
 
 
-def make_phase5_report(forms, main, sweep, rand, cases, n_formulations_total, tau=0.8, lo_frac=0.5, hi_mult=2.0) -> str:
+def direction_check(main: pd.DataFrame, gold: pd.DataFrame) -> pd.DataFrame:
+    """For each gold herb-drug pair: across all scenarios (formulations) containing the herb for that drug, how often is the herb's share
+    reduced / increased? Pairs whose herb appears in no scenario are omitted (never reported as 0%)."""
+    rows = []
+    for g in gold.itertuples():
+        sub = main[(main["drug"] == g.drug) & main["herbs"].str.split("; ").map(lambda h: g.herb in h)]
+        if sub.empty:
+            continue
+        ch = []
+        for r in sub.itertuples():
+            i = r.herbs.split("; ").index(g.herb)
+            ch.append(float(r.w.split("; ")[i]) / float(r.w0.split("; ")[i]) - 1)
+        ch = np.array(ch)
+        rows.append({"herb": g.herb, "drug": g.drug, "gold_label": g.label, "mechanism": g.mechanism, "n_formulations": len(ch),
+                     "frac_reduced": float((ch < -1e-6).mean()), "frac_increased": float((ch > 1e-6).mean()), "median_change": float(np.median(ch))})
+    return pd.DataFrame(rows, columns=["herb", "drug", "gold_label", "mechanism", "n_formulations", "frac_reduced", "frac_increased", "median_change"])
+
+
+def phase5_facts(forms, main, sweep, rand, direction) -> dict:
+    """Flat, JSON-safe numbers from a Phase 5 run. The paper drafts are rendered from these, so no number is ever retyped by hand."""
+    nan_to_none = lambda v: None if (isinstance(v, float) and v != v) else v
+    r = main["rel_reduction"]
+    e = main["eval_rel_reduction"] if "eval_rel_reduction" in main else pd.Series(dtype=float)
+    pos = direction[(direction["gold_label"] == 1) & (direction["mechanism"] == "PK")] if direction is not None and len(direction) else pd.DataFrame(columns=["frac_reduced"])
+    neg = direction[direction["gold_label"] == 0] if direction is not None and len(direction) else pd.DataFrame(columns=["frac_reduced"])
+    f = {"forms": len(forms), "forms_scoped": int((forms["in_scope"].map(len) >= 1).sum()),
+         "forms_opt": int(forms["in_scope"].map(lambda x: len(set(x)) >= 2).sum()), "scenarios": len(main),
+         "median_red": float(r.median()), "mean_red": float(r.mean()), "p90_red": float(r.quantile(0.9)), "frac_improve_1pct": float((r > 0.01).mean()),
+         "min_coverage": float(main["min_coverage_ratio"].min()), "n_flags": int((main["n_flags"] > 0).sum()),
+         "transfer_median": float(e.median()) if len(e) else None, "transfer_improve_frac": float((e > 0).mean()) if len(e) else None,
+         "spearman": nan_to_none(float(r.corr(e, method="spearman"))) if len(e) > 1 else None,
+         "sweep_min_red": float(sweep["median_rel_reduction"].min()), "sweep_max_red": float(sweep["median_rel_reduction"].max()),
+         "random_median": float(rand["random_median"]), "equal_median": float(rand["equal_median"]),
+         "dir_pos_mean": float(pos["frac_reduced"].mean()) if len(pos) else None, "dir_pos_min": float(pos["frac_reduced"].min()) if len(pos) else None,
+         "dir_pos_max": float(pos["frac_reduced"].max()) if len(pos) else None, "n_dir_pos": int(len(pos)),
+         "dir_neg_mean": float(neg["frac_reduced"].mean()) if len(neg) else None, "n_dir_neg": int(len(neg))}
+    return {k: nan_to_none(v) for k, v in f.items()}
+
+
+def make_phase5_report(forms, main, sweep, rand, cases, n_formulations_total, tau=0.8, lo_frac=0.5, hi_mult=2.0, direction=None) -> str:
     """Markdown report. Every number is computed from the inputs."""
     n_any = int((forms["in_scope"].map(len) >= 1).sum())
     n_two = int(forms["in_scope"].map(lambda x: len(set(x)) >= 2).sum())
@@ -188,6 +238,20 @@ def make_phase5_report(forms, main, sweep, rand, cases, n_formulations_total, ta
               for r in cases.itertuples()]
     else:
         L.append("No matching formulations.")
+    if direction is not None and len(direction):
+        L += ["", "## Direction check against the published studies", "",
+              "For every herb-drug pair with a published human study (Phase 3 gold set), across all formulations that contain the herb: how often does the optimiser lower "
+              "that herb's share? Lowering is the right direction where the study found a published interaction and the wrong direction where it found no interaction.", "",
+              "| herb | drug | gold | mechanism | formulations | share reduced | share increased | median change |", "|---|---|---|---|---|---|---|---|"]
+        L += [f"| {r.herb} | {r.drug} | {'interaction' if r.gold_label == 1 else 'no interaction'} | {r.mechanism} | {r.n_formulations} | {r.frac_reduced:.0%} | "
+              f"{r.frac_increased:.0%} | {r.median_change:+.0%} |" for r in direction.itertuples()]
+        pos = direction[(direction["gold_label"] == 1) & (direction["mechanism"] == "PK")]
+        neg = direction[direction["gold_label"] == 0]
+        if len(pos):
+            L += ["", f"Computed: for the {len(pos)} pairs with a published interaction (pharmacokinetic), the herb's share is reduced in {pos['frac_reduced'].mean():.0%} of scenarios on average "
+                      f"(per-pair range {pos['frac_reduced'].min():.0%} to {pos['frac_reduced'].max():.0%})."]
+        if len(neg):
+            L += [f"For the {len(neg)} pairs with no interaction in the published trial, the herb is nevertheless reduced in {neg['frac_reduced'].mean():.0%} of scenarios on average (a false alarm inherited from the risk proxy)."]
     L += ["", "## Limitations", "",
           "- The risk is a mechanistic-hypothesis proxy with known false alarms (e.g. ginger-warfarin, a human-trial negative, scores high), so the "
           "optimiser can lower the share of a herb that is actually safe.",
@@ -222,7 +286,10 @@ def run_all(report_path="docs/phase5_results.md", n_random=5):
     cases = select_cases(main, CASE_PICKS)
     OUT.mkdir(parents=True, exist_ok=True)
     main.to_parquet(OUT / "scenarios.parquet", index=False)
-    Path(report_path).write_text(make_phase5_report(forms, main, sweep, rand, cases, len(forms)), encoding="utf-8")
+    direction = direction_check(main, curated.load_gold())
+    import json
+    (OUT / "facts.json").write_text(json.dumps(phase5_facts(forms, main, sweep, rand, direction)), encoding="utf-8")
+    Path(report_path).write_text(make_phase5_report(forms, main, sweep, rand, cases, len(forms), direction=direction), encoding="utf-8")
     return forms, main, sweep, rand, cases
 
 

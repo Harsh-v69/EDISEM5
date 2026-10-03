@@ -64,6 +64,28 @@ Formulations containing a herb with a published human interaction (Phase 3 gold 
 | Mukkāmukkaṭuvādi guṭikā | Allium sativum | warfarin | 0.048 | 0.038 | 6 | 5.3% | gold: NO interaction (RCT, Mohammed Abdul 2008); a model false alarm |
 | Kālakūṭa rasa | Allium sativum | warfarin | 0.036 | 0.029 | 6 | 4.5% | gold: NO interaction (RCT, Mohammed Abdul 2008); a model false alarm |
 
+## Direction check against the published studies
+
+For every herb-drug pair with a published human study (Phase 3 gold set), across all formulations that contain the herb: how often does the optimiser lower that herb's share? Lowering is the right direction where the study found a published interaction and the wrong direction where it found no interaction.
+
+| herb | drug | gold | mechanism | formulations | share reduced | share increased | median change |
+|---|---|---|---|---|---|---|---|
+| Piper nigrum | propranolol | interaction | PK | 277 | 73% | 27% | -19% |
+| Piper nigrum | theophylline | interaction | PK | 277 | 73% | 27% | -19% |
+| Piper nigrum | phenytoin | interaction | PK | 277 | 75% | 25% | -19% |
+| Piper nigrum | carbamazepine | interaction | PK | 277 | 75% | 25% | -19% |
+| Commiphora wightii | propranolol | interaction | PK | 39 | 100% | 0% | -20% |
+| Commiphora wightii | diltiazem | interaction | PK | 39 | 100% | 0% | -20% |
+| Zingiber officinale | warfarin | no interaction | none | 332 | 99% | 1% | -20% |
+| Allium sativum | warfarin | no interaction | none | 19 | 42% | 58% | +20% |
+| Trigonella foenum-graecum | warfarin | interaction | unclear | 8 | 88% | 12% | -20% |
+| Glycyrrhiza glabra | hydrochlorothiazide | interaction | PD | 112 | 100% | 0% | -20% |
+| Glycyrrhiza glabra | furosemide | interaction | PD | 112 | 100% | 0% | -20% |
+| Curcuma longa | tacrolimus | interaction | PK | 102 | 77% | 23% | -19% |
+
+Computed: for the 7 pairs with a published interaction (pharmacokinetic), the herb's share is reduced in 82% of scenarios on average (per-pair range 73% to 100%).
+For the 2 pairs with no interaction in the published trial, the herb is nevertheless reduced in 70% of scenarios on average (a false alarm inherited from the risk proxy).
+
 ## Limitations
 
 - The risk is a mechanistic-hypothesis proxy with known false alarms (e.g. ginger-warfarin, a human-trial negative, scores high), so the optimiser can lower the share of a herb that is actually safe.

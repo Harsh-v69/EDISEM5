@@ -1,0 +1,22 @@
+# Exact versions used for the reported results (Python 3.12).
+# GPU: install torch from the CUDA wheel index, e.g.
+#   pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cu128
+# then: pip install -r requirements.txt
+# The local language model is served separately by Ollama (model: qwen3:8b); it is not a pip dependency.
+beautifulsoup4==4.15.0
+lxml==6.1.3
+networkx==3.7
+numpy==2.5.3
+pandas==3.0.6
+pyarrow==25.0.1
+pytest==9.1.1
+PyYAML==6.0.3
+rdkit==2026.3.6
+requests==2.34.2
+scikit-learn==1.9.1
+scipy==1.18.1
+sentence-transformers==6.1.0
+streamlit==1.65.0
+torch==2.11.0
+torch_geometric==2.8.0.post1
+transformers==5.18.0

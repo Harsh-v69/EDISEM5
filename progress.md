@@ -1,6 +1,6 @@
 # Project Progress (read this first)
 
-_Last updated: 2026-10-03 (Phases 0-6 complete; Jivha/Nadi go/no-go still needs the project owner's decision). For a full project briefing (slides/reports) see `context.md`. This file is written so someone with zero background can understand the project and where it stands._
+_Last updated: 2026-10-03 (Phases 0-6 and 8 complete; Phase 7 not built, awaiting a clinical partner; expert review pending)._ For a full project briefing (slides/reports) see `context.md`. This file is written so someone with zero background can understand the project and where it stands._
 
 ## 1. What is this project?
 
@@ -56,12 +56,17 @@ How to run the checks: `.\.venv\Scripts\python -m pytest -q`
 | 4 | Baselines, GNN, evaluation; **Jivha/Nadi go/no-go** | **Done** (`docs/phase4_results.md`): RF beats GNN on every cold split; graph structure adds nothing over node features; drug-side generalisation weak. **Go/no-go decision still needs you** |
 | 5 | Safe-composition optimiser | **Done** (`docs/phase5_results.md`): 529 real formulations can be re-weighted; 18,515 single-drug scenarios all solve; effects are small (median risk reduction 3.7%) and all constraints hold |
 | 6 | GraphRAG + evaluation | **Done** (`docs/phase6_results.md`): cited answers over two classical texts + the KG; real limits found and documented. **No expert-verified question set yet**, AyurParam deferred |
-| 7 | Jivha/Nadi pipeline (only if go) | Not started |
-| 8 | Demo + paper drafts | Not started |
+| 7 | Jivha/Nadi pipeline (only if go) | **Not built**: no clinical partner or ethics approval. Partner-independent pieces done: `docs/jivha_nadi_protocol.md` (capture protocol, annotation guide, ethics gate, validation plan) and a tested Cohen's kappa module |
+| 8 | Demo + paper drafts | **Done**: local Streamlit demo (risk lookup with graph-path explanation, formulation re-weighting, cited Q&A), two paper drafts rendered from result files, README, `requirements.txt`, one-command data fetch |
 
-Test suite: 211 automated tests, all passing (`.\.venv\Scripts\python -m pytest -q`).
+Test suite: 250 automated tests, all passing (`.\.venv\Scripts\python -m pytest -q`).
 
 ## 5. Log (newest first)
+
+- **2026-10-03, Phase 8 complete (demo and paper drafts).**
+  - **Demo** (`streamlit run ayurveda_kg/demo/app.py`, local only because IMPPAT-derived data cannot be redistributed): all logic is in tested pure functions (`demo/service.py`), the app only renders. Risk lookup shows the score, its rank, the compounds driving it, the real CYP path with sources for each, and the published human study where one exists (the ginger-warfarin trial negative is shown as "no interaction found"). The formulation tab re-weights a real formulation for several drugs at once. Headless app tests on the real data pass; a real-browser check confirmed the page renders (my attempts to drive the dropdowns by hand did not register because the pane stopped redrawing, so interactions are covered by the headless tests, not visually).
+  - **Papers** (`docs/paper/`): two drafts written as templates; `python -m ayurveda_kg.paper` fills every number from the stored result files and **refuses to render if any value is missing**. A claims test asserts each directional statement in the prose (RF beats GNN on every cold split, K-first did not help, the over-reading fix did not worsen things, and so on) against the real numbers, so a re-run that changes a result fails a test instead of leaving the text stale. References are limited to sources seen during the project; everything else is marked [VERIFY].
+  - **Found and fixed while building it:** (1) a direction-of-effect check against the published studies showed the optimiser lowers the herbs with published pharmacokinetic interactions in 82% of scenarios on average (73% to 100% per pair) but also lowers ginger in 99% of formulations even though its warfarin trial was negative, and for Trikaṭu cūrṇa with phenytoin it raised black pepper, the opposite of the published piperine result; this is now in the Phase 5 report instead of hidden behind favourable case studies; (2) the paper text had a sign error (it described GNN minus MLP as the effect of removing message passing); (3) my own "unresolved value" check mistook the name Ananth and the English word "none" for errors; (4) the Phase 1 downloads had only been run as one-off shell snippets, so a fresh clone could not reproduce them; now `ayurveda_kg.ingest.fetch_all` does it in one idempotent, manifest-tracked command (verified: 0 network calls when everything is cached); (5) there was no `requirements.txt`; added with exact versions.
 
 - **2026-10-03, Phases 5 and 6 complete.**
   - **Phase 5 (composition optimiser), final run.** IMPPAT formulations: 1,573 parsed; 777 contain at least one of the 20 scoped herbs; **529 contain two or more**, the minimum for re-weighting (the rest are mostly single-herb pharmacopoeia monographs). 18,515 scenarios (529 formulations x 35 drugs), all optimal. Median relative risk reduction **3.7%** (90th percentile 6.6%), small because scoped herbs are only ~20% of a typical formulation's ingredients. Constraint checks: lowest coverage kept = exactly the 0.80 floor; no herb ever cut below half its baseline share. Looser constraints give larger reductions (0.9% to 9.3% across the sweep); random (Dirichlet) baselines give 2.7% vs 3.7% for equal parts, so the conclusion survives the unknown-proportions assumption but shrinks by about a quarter. Transfer: 57% of suggestions also improve under the independent silver risk (Spearman 0.61). The case studies show the **false alarm** plainly: ginger and garlic with warfarin (human-trial negatives) are lowered exactly like piperine with phenytoin (a true positive).
@@ -116,11 +121,15 @@ Test suite: 211 automated tests, all passing (`.\.venv\Scripts\python -m pytest 
 
 ## 8. Next
 
-1. **Decision for you (Jivha/Nadi go/no-go):** do you have, or can you secure within about two weeks, a clinical partner (BAMS college/clinic) and ethics approval for tongue/nail/pulse data? If yes, Phase 7 gets a real data-collection pipeline; if not, it stays a designed-but-stubbed module and is future work in the paper. Phase 8 does not depend on it.
-2. **Needs a human expert:** (a) review the 12 gold HDI pairs; (b) fill and verify the GraphRAG question set (`data/processed/rag/expert_template.csv` is ready) and spot-check a sample of extracted triples. Until then no claim about real-world answer correctness is made.
-3. Phase 8: demo app (herb-drug risk lookup with graph-path explanation, cited chat, composition suggestions) and paper drafts. Suggested framing given the results: Paper 1 = KG + leakage-aware label methodology + benchmark with honest negative results (graph adds nothing over features; weak drug-side generalisation) + composition case study; Paper 2 = GraphRAG with the vocabulary-gap and over-reading findings.
-4. Optional strengthening before drafting (see backlog): experimental CYP bioactivity as an independent label source, drug chemistry features, AyurParam comparison (needs your approval to download).
-5. Rebuild everything from cached raw files (no network): `python -m ayurveda_kg.build`, `phase3`, `phase4`, `phase4_report`, `phase5`, and (needs Ollama running) `phase6`.
+The build is complete for what can be done without outside help. What remains needs people or decisions:
+
+1. **Expert review (blocks any claim in the papers):** a pharmacist or pharmacology expert should check the 12 gold pairs; an Ayurveda expert should fill the GraphRAG question set (`data/processed/rag/expert_template.csv`, 6 draft questions; the plan calls for 50 to 100) and spot-check a sample of the extracted triples.
+2. **Jivha/Nadi:** needs a clinical partner and ethics approval; the protocol and kappa code are ready (`docs/jivha_nadi_protocol.md`).
+3. **IMSc permission:** ask the IMPPAT authors for permission before releasing any derived data or hosting the demo publicly.
+4. **Verify the references** marked [VERIFY] in the paper drafts and re-check the LASI figures taken from the brief; choose a venue; mentor review.
+5. **Strengthening the science before submission** (from the backlog): experimental CYP bioactivity as an independent label source; drug chemistry features (the weak drug-side result); the AyurParam comparison (needs approval to download ~1.8 GB); a larger, expert-verified GraphRAG question set; better direction-of-effect for the composition study.
+6. **Publish:** commit/push (done through Phase 6; Phase 8 is in the next commit).
+7. Rebuild everything from a fresh clone: see the README quickstart.
 
 ## 9. Downloads log (what was fetched, from where, why)
 

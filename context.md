@@ -1,7 +1,7 @@
 # Project Context: Ayurvedic Knowledge Graph for Herb-Drug Interaction Prediction
 
 _Purpose of this file: a single, self-contained briefing that anyone (or any tool) can use to understand the project, then write a report, build slides, draft a paper section or answer questions, without reading the code. For live status see `progress.md`; for design detail see `docs/`._
-_State described: 2026-10-03 (Phases 0-6 complete). Numbers below are measured from the real build unless marked "planned"._
+_State described: 2026-10-03 (Phases 0-6 and 8 complete; Phase 7 not built). Numbers below are measured from the real build unless marked "planned"._
 
 ---
 
@@ -169,6 +169,11 @@ Corpus: Kaviratna *Charaka-Samhita* and Bhishagratna *Sushruta Samhita* (public-
 - **Honest findings:** a small local model sometimes refuses despite having the answer; putting KG facts first in the prompt was worse, not better; the model turned "co-mentioned" into "balances" until the wording and prompt were fixed (1 of 16 sentences over-read before, 0 of 17 after; small samples); an irrelevant passage can still be blended into an answer, which the automatic proxy cannot see. An early automatic check wrongly reported the fix as harmful because it ignored negation; it was repaired and recounted.
 - **Not claimed:** correctness on real questions. The expert-verified question set (template ready) and the AyurParam comparison (not approved for download) are pending.
 
+### 7.7 Demo and paper drafts (Phase 8)
+- **Demo:** a local Streamlit app (risk lookup with graph-path explanation and the published study where one exists; formulation re-weighting for several drugs; cited Q&A). Local only, because IMPPAT-derived data cannot be redistributed.
+- **Drafts:** `docs/paper/paper1_draft.md` (knowledge graph, leakage-aware benchmark with honest negative results, composition case study) and `paper2_draft.md` (GraphRAG: vocabulary gap, over-reading, small-model failure modes). Rendered from templates so every number comes from the result files; a test asserts each directional claim against the real numbers.
+- **Direction-of-effect check (composition):** for herbs with published pharmacokinetic interactions the optimiser lowers their share in 82% of scenarios on average (73% to 100% per pair), but it also lowers ginger in 99% of formulations although its warfarin trial was negative.
+
 ## 8. Data-quality bugs found by checking real data (not just unit tests)
 1. Drug lookup returned a duplicate ChEMBL entry instead of the parent molecule (theophylline).
 2. Enzyme families (ESTERASES, UGT) were created as fake "gene" nodes.
@@ -208,8 +213,8 @@ Venue undecided; built to a bioinformatics-journal standard (candidates: Briefin
 | 4 | Baselines, GNN, evaluation; Jivha/Nadi go/no-go | **Done** (`docs/phase4_results.md`); go/no-go awaits the project owner |
 | 5 | Safe-composition optimiser | **Done** (`docs/phase5_results.md`) |
 | 6 | GraphRAG + evaluation | **Done** (`docs/phase6_results.md`); expert question set pending |
-| 7 | Jivha/Nadi pipeline (if go) | Not started |
-| 8 | Demo + paper drafts | Not started |
+| 7 | Jivha/Nadi pipeline (if go) | **Not built** (no clinical partner/ethics approval); protocol + tested kappa code ready |
+| 8 | Demo + paper drafts | **Done**: local demo, two drafts rendered from result files, README, requirements |
 
 External dependencies: a domain advisor (Ayurveda expert/pharmacist) for gold-set and GraphRAG question verification; a clinical partner + ethics approval for Jivha/Nadi; IMSc permission for IMPPAT-derived releases.
 
@@ -225,7 +230,7 @@ External dependencies: a domain advisor (Ayurveda expert/pharmacist) for gold-se
 
 **Figures worth drawing:** the architecture diagram; the KG schema (node/edge types); a worked example path *piperine -> CYP2C19 <- phenytoin*; a bar chart of compounds per herb; the gold-vs-silver percentile plot (section 7.3); a diagram of masked edges (what the model may and may not see).
 
-**Quotable numbers:** 529 re-weightable real formulations, median 3.7% modelled risk reduction; 6,493 passages, vocabulary-gap recall@5 0.017 to 0.167 with alias+graph; 20 herbs, 1,696 compounds, 35 drugs, 1,667 target genes; 11,947 compound-target edges; 59,360 labelled pairs (10,235 positive); 12-pair cited gold set; 211 automated tests (as of this writing); 3,392 pages crawled politely at 1 request/second.
+**Quotable numbers:** 529 re-weightable real formulations, median 3.7% modelled risk reduction; 6,493 passages, vocabulary-gap recall@5 0.017 to 0.167 with alias+graph; 20 herbs, 1,696 compounds, 35 drugs, 1,667 target genes; 11,947 compound-target edges; 59,360 labelled pairs (10,235 positive); 12-pair cited gold set; 250 automated tests (as of this writing); 3,392 pages crawled politely at 1 request/second.
 
 **Anticipated reviewer questions:** Does the graph help? (No: GNN = MLP; an honest negative result.) Are cold-drug numbers inflated? (Pooled yes; drug-side AUROC is reported separately.) Why are labels not circular? (masking + herb-wise splits + clinical gold.) Is this clinically valid? (No; research score; gold shows false alarms.) Why only 20 herbs? (scope control; extensible via config.) Why not DrugBank? (licence gate; optional plug-in.) Can you release the data? (code + identifiers; IMPPAT licence forbids derivatives.) How do proportions get optimised without dose data? (risk proxy, hypothesis-generating, stated plainly.)
 

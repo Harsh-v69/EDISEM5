@@ -83,3 +83,24 @@ def test_report_has_an_overreading_before_after_section_when_given():
     ov = pd.DataFrame([{"variant": "before", "qid": "a", "n_cocite": 6, "n_overclaim": 4}, {"variant": "after", "qid": "a", "n_cocite": 5, "n_overclaim": 1}])
     md = make_phase6_report(stats, retr, ANS, [], overread=ov)
     assert "## Over-reading of co-occurrence facts" in md and "4 of 6" in md and "1 of 5" in md
+
+
+from ayurveda_kg.phase6 import phase6_facts
+
+
+def test_phase6_facts_are_flat_json_safe_numbers_keyed_by_config_system_and_question_type():
+    import json
+    stats = {"n_chunks": 6493, "per_text": {"Charaka": 3912, "Sushruta": 2581}, "herbs_found": 16, "herbs_total": 20, "cooccurrence_edges": 211,
+             "triples_rows": 476, "triples_accepted": 532, "triples_rejected": 710, "triples_errors": 0, "relations": {"treats": 434, "pacifies": 88, "aggravates": 10}}
+    cfgs = ["plain", "alias", "graph", "alias+graph"]
+    retr = pd.DataFrame([{"config": c, "recall@5": 0.4 + 0.01 * i, "recall@10": 0.6, "mrr": 0.3, "n": 60} for i, c in enumerate(cfgs)])
+    gap = pd.DataFrame([{"config": c, "recall@5": 0.02 * (i + 1), "recall@10": 0.1, "mrr": 0.05, "n": 60} for i, c in enumerate(cfgs)])
+    ov = pd.DataFrame([{"variant": "before", "qid": "a", "n_cocite": 16, "n_overclaim": 1}, {"variant": "after", "qid": "a", "n_cocite": 17, "n_overclaim": 0}])
+    f = phase6_facts(stats, retr, gap, ANS, ov)
+    json.dumps(f)
+    assert f["chunks"] == 6493 and f["triples_accepted"] == 532 and f["herbs_found"] == 16
+    assert f["retr_plain_r5"] == pytest.approx(0.40) and f["retr_aliasgraph_r5"] == pytest.approx(0.43)
+    assert f["gap_plain_r5"] == pytest.approx(0.02) and f["gap_aliasgraph_r5"] == pytest.approx(0.08)
+    assert f["kg_full_top_drugs"] == pytest.approx((1 + 2 / 3) / 2) and f["kg_plain_top_drugs"] == 0.0 and f["kg_full_pair_score"] == 1.0
+    assert f["refusal_plain_top_drugs"] == 1.0
+    assert f["over_before_n"] == 1 and f["over_before_d"] == 16 and f["over_after_n"] == 0 and f["over_after_d"] == 17

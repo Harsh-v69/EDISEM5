@@ -67,3 +67,22 @@ def test_precomputed_pivot_gives_identical_problem_and_scenarios_match_the_slow_
         p = build_problem(f.in_scope, f.n_ingredients, RISK, [r.drug], USES, "risk_rf")
         o = optimise(p["risk"], p["w0"], A=p["A"], tau=0.5)
         assert r.objective == pytest.approx(o["objective"]) and r.baseline_objective == pytest.approx(o["baseline_objective"])
+
+
+def test_load_formulation_records_parses_once_then_reads_the_cache(tmp_path):
+    from ayurveda_kg.phase5 import load_formulation_records
+    d = tmp_path / "formulations"
+    d.mkdir()
+    page = ('<html><body><div>Formulation identifier: AFI000001 Dosage (according to X): 1 g Ingredients of Test Formulation name Ingredient name Plant part</div>'
+            '<table><thead><tr><th>Formulation name</th><th>Ingredient name</th><th>Plant part</th></tr></thead><tbody>'
+            '<tr><td>T</td><td>Piper nigrum</td><td>fruit</td></tr><tr><td>T</td><td>Borax</td><td></td></tr></tbody></table></body></html>')
+    (d / "afi_1.html").write_text(page, encoding="utf-8")
+    scope = {"herbs": [{"imppat_name": "Piper nigrum", "aliases": []}], "drugs": []}
+    cache = tmp_path / "forms.parquet"
+    a = load_formulation_records(cache=cache, form_dir=d, lookup=herb_lookup(scope))
+    assert cache.exists() and list(a["in_scope"].iloc[0]) == ["Piper nigrum"] and a["n_ingredients"].iloc[0] == 2
+    (d / "afi_1.html").unlink()                                              # raw pages gone: the cache alone must serve the second call
+    b = load_formulation_records(cache=cache, form_dir=d, lookup=herb_lookup(scope))
+    assert b["id"].tolist() == a["id"].tolist() and list(b["in_scope"].iloc[0]) == ["Piper nigrum"]
+    c = load_formulation_records(cache=cache, form_dir=d, lookup=herb_lookup(scope), refresh=True)
+    assert len(c) == 0                                                       # refresh really re-parses (and now finds nothing)

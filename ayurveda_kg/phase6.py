@@ -34,6 +34,24 @@ def summarize_answers(df: pd.DataFrame) -> pd.DataFrame:
                  refusal_rate=("refused", "mean"), n=("correct", "size")).reset_index()
 
 
+def phase6_facts(stats: dict, retr: pd.DataFrame, gap: pd.DataFrame, answers: pd.DataFrame, overread: pd.DataFrame) -> dict:
+    """Flat, JSON-safe numbers from a Phase 6 run (config names lose '+': alias+graph -> aliasgraph). The paper drafts are rendered from these."""
+    key = lambda c: c.replace("+", "")
+    f = {"chunks": stats["n_chunks"], "herbs_found": stats["herbs_found"], "herbs_total": stats["herbs_total"], "co_edges": stats["cooccurrence_edges"],
+         "triples_rows": stats["triples_rows"], "triples_accepted": stats["triples_accepted"], "triples_rejected": stats["triples_rejected"]}
+    for tag, df in (("retr", retr), ("gap", gap)):
+        if df is not None:
+            for _, r in df.iterrows():
+                f[f"{tag}_{key(r['config'])}_r5"], f[f"{tag}_{key(r['config'])}_r10"] = float(r["recall@5"]), float(r["recall@10"])
+                f[f"{tag}_{key(r['config'])}_mrr"], f[f"{tag}_n"] = float(r["mrr"]), int(r["n"])
+    for r in summarize_answers(answers).itertuples():
+        f[f"kg_{r.system}_{r.qtype}"], f[f"refusal_{r.system}_{r.qtype}"], f[f"n_{r.qtype}"] = float(r.correctness), float(r.refusal_rate), int(r.n)
+    if overread is not None and len(overread):
+        for r in summarize_overread(overread).itertuples():
+            f[f"over_{r.variant}_n"], f[f"over_{r.variant}_d"] = int(r.n_overclaim), int(r.n_cocite)
+    return f
+
+
 def summarize_overread(df: pd.DataFrame) -> pd.DataFrame:
     g = df.groupby("variant").agg(n_cocite=("n_cocite", "sum"), n_overclaim=("n_overclaim", "sum"), questions=("qid", "nunique")).reset_index()
     g["rate"] = g["n_overclaim"] / g["n_cocite"].where(g["n_cocite"] > 0)
@@ -287,7 +305,9 @@ def run_all(report_path="docs/phase6_results.md"):
     examples = json.loads(ex_path.read_text(encoding="utf-8")) if ex_path.exists() else examples_stage(sys_)
     ex_path.write_text(json.dumps(examples, ensure_ascii=False), encoding="utf-8")
     ev.write_expert_template(OUT / "expert_template.csv", [{"id": f"E{i + 1}", "question": q} for i, q in enumerate(EXAMPLE_QUESTIONS)])
-    Path(report_path).write_text(make_phase6_report(stats_of(sys_), retr, answers, examples, retr_gap=gap, overread=overread), encoding="utf-8")
+    stats = stats_of(sys_)
+    (OUT / "facts.json").write_text(json.dumps(phase6_facts(stats, retr, gap, answers, overread)), encoding="utf-8")
+    Path(report_path).write_text(make_phase6_report(stats, retr, answers, examples, retr_gap=gap, overread=overread), encoding="utf-8")
     return retr, answers
 
 

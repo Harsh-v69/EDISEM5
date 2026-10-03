@@ -10,3 +10,6 @@ data/raw/
 data/processed/
 data/*.log
 tests/fixtures/imppat_*.html
+
+# local tooling
+.claude/
