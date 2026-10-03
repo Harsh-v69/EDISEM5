@@ -30,8 +30,7 @@ def get_retriever():
 
 html('<h1 class="page-title">Herb and drug research tool</h1>'
      '<p class="page-sub">Check how a herb and a drug may interact, adjust a formulation, or search two classical texts. Every score links back to its evidence.</p>'
-     '<div class="notice"><strong>Research use only.</strong> Not medical advice. Scores are hypotheses from predicted enzyme inhibition and have known false alarms. '
-     'This tool shows IMPPAT-derived data (CC BY-NC-ND): run it on this computer and do not host it publicly.</div>')
+     '<div class="notice"><strong>Research use only.</strong> Not medical advice. Scores are hypotheses from predicted enzyme inhibition and have known false alarms.</div>')
 
 d = get_data()
 herbs, drugs = S.list_herbs(d), S.list_drugs(d)
