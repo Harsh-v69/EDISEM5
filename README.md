@@ -4,6 +4,26 @@ A research project built around **one shared knowledge graph** of Ayurvedic herb
 
 > **Everything here is research software. Outputs are research risk scores and hypotheses, never medical advice or a diagnosis.** The scores come from predicted enzyme inhibition and have known false alarms (for example ginger with warfarin).
 
+## Run it (short version)
+
+**On the computer where the data is already built** (open a terminal in the project folder):
+
+```bash
+.venv\Scripts\python -m streamlit run ayurveda_kg/demo/app.py
+```
+
+Your browser opens the demo at http://localhost:8501. It is set to answer on this computer only (see `.streamlit/config.toml`), because it shows IMPPAT-derived data that must not be shared. Pick a herb and a drug on the first tab; the other tabs re-weight a formulation and search the classical texts. (For written answers on the third tab, start Ollama with the `qwen3:8b` model and tick the checkbox; without it you still get the cited passages.)
+
+Check that everything works:
+
+```bash
+.venv\Scripts\python -m pytest -q
+```
+
+**On a new computer:** install Python 3.12, then `python -m venv .venv` and `.venv\Scripts\python -m pip install -r requirements.txt`. The tests run right away (the ones that need data skip themselves). **The demo needs the data, which is not in this repository** (IMPPAT's licence forbids publishing it), so rebuild it first with the steps under "Rebuild the results" below; the slow part is two polite web crawls of about an hour each.
+
+## Details
+
 New to the project? Read [`progress.md`](progress.md) (plain-language status and log) or [`context.md`](context.md) (full briefing for reports and slides).
 
 ## What exists

@@ -1,0 +1,7 @@
+# The demo shows IMPPAT-derived data (CC BY-NC-ND): keep it private to this computer.
+[server]
+address = "localhost"
+headless = false
+
+[browser]
+gatherUsageStats = false
