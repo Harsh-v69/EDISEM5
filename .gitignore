@@ -13,3 +13,6 @@ tests/fixtures/imppat_*.html
 
 # local tooling
 .claude/
+
+# local secrets (API keys): never commit
+.env

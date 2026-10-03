@@ -12,7 +12,7 @@ A research project built around **one shared knowledge graph** of Ayurvedic herb
 .venv\Scripts\python -m streamlit run ayurveda_kg/demo/app.py
 ```
 
-Your browser opens the demo at http://localhost:8501. It is set to answer on this computer only (see `.streamlit/config.toml`), because it shows IMPPAT-derived data that must not be shared. Pick a herb and a drug on the first tab; the other tabs re-weight a formulation and search the classical texts. (For written answers on the third tab, start Ollama with the `qwen3:8b` model and tick the checkbox; without it you still get the cited passages.)
+Your browser opens the demo at http://localhost:8501. It is set to answer on this computer only (see `.streamlit/config.toml`), because it shows IMPPAT-derived data that must not be shared. Pick a herb and a drug on the first tab; the other tabs re-weight a formulation and search the classical texts. (For written answers on the third tab, either put `GEMINI_API_KEY=your-key` in a file named `.env` in the project folder (it is git-ignored; the question and retrieved passages are then sent to Google), or start Ollama with the `qwen3:8b` model. With both, Gemini answers and the local model is the fallback. Without either you still get the cited passages.)
 
 Check that everything works:
 

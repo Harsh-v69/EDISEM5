@@ -101,3 +101,11 @@ def test_ask_returns_items_and_degrades_to_retrieval_only_when_no_model_is_avail
         raise RuntimeError("down")
     out = ask(R(), "q", client=boom)
     assert out["items"] and out["answer"]["error"]
+
+
+def test_explain_pair_also_returns_structured_path_steps_for_drawing_the_chain():
+    top = explain_pair(data(), "Piper nigrum", "phenytoin", top_n=2)["compounds"]
+    step = top[0]["path_steps"][0]
+    assert step == {"herb": "Piper nigrum", "compound": "piperine", "enzyme": "CYP3A4", "drug": "phenytoin",
+                    "inhibitor_source": "SwissADME (via IMPPAT)", "substrate_source": "ChEMBL metabolism; TDC"}
+    assert top[1]["path_steps"] == []

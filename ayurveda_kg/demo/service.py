@@ -78,12 +78,15 @@ def explain_pair(d: DemoData, herb: str, drug: str, top_n=5) -> dict:
     for c, p in zip(r["compound"], r["p"]):
         silver = int(lab.loc[c, "label"]) if c in lab.index else None
         enzymes = [e for e in str(lab.loc[c, "enzymes"]).split(";") if e] if c in lab.index else []
-        paths = []
+        paths, steps = [], []
         if silver == 1:
             for x in enzymes:
+                steps.append({"herb": herb, "compound": names.get(c, c), "enzyme": x, "drug": drug,
+                              "inhibitor_source": _source(d.edges.get("predicted_cyp_inhibitor"), c, f"gene:{x}"),
+                              "substrate_source": _source(d.edges.get("substrate_of"), drug_id, f"gene:{x}")})
                 paths.append(f"{herb} → {names.get(c, c)} → predicted inhibitor of {x} [{_source(d.edges.get('predicted_cyp_inhibitor'), c, f'gene:{x}')}]"
                              f" ← known substrate of {x} [{_source(d.edges.get('substrate_of'), drug_id, f'gene:{x}')}] ← {drug}")
-        comps.append({"name": names.get(c, c), "p": float(p), "silver_label": silver, "enzymes": enzymes, "paths": paths})
+        comps.append({"name": names.get(c, c), "p": float(p), "silver_label": silver, "enzymes": enzymes, "paths": paths, "path_steps": steps})
     g = d.gold[(d.gold["herb"] == herb) & (d.gold["drug"] == drug)]
     gold = [{k: r_[k] for k in ("pmid", "label", "mechanism", "evidence", "confidence", "citation", "finding")} for _, r_ in g.iterrows()]
     return {"herb": herb, "drug": drug, "scores": scores, "compounds": comps, "gold": gold, "caveat": CAVEAT}

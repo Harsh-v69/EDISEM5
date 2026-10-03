@@ -5,3 +5,11 @@ headless = false
 
 [browser]
 gatherUsageStats = false
+
+# One light theme. Colours mirror ayurveda_kg/demo/ui.py (PALETTE); fonts are applied in style.css.
+[theme]
+base = "light"
+primaryColor = "#2D7A66"
+backgroundColor = "#F8FAF9"
+secondaryBackgroundColor = "#EDF1EF"
+textColor = "#1B2621"

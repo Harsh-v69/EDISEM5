@@ -122,3 +122,54 @@ def ollama_text_client(model="qwen3:8b", host="http://127.0.0.1:11434", timeout=
         r.raise_for_status()
         return r.json()["message"]["content"]
     return call
+
+
+def load_env(path=".env"):
+    """Read KEY=value lines from a local, gitignored file into os.environ (existing variables win)."""
+    import os
+    from pathlib import Path
+    p = Path(path)
+    if p.exists():
+        for line in p.read_text(encoding="utf-8").splitlines():
+            k, sep, v = line.partition("=")
+            if sep and not line.lstrip().startswith("#"):
+                os.environ.setdefault(k.strip(), v.strip().strip("\"'"))
+
+
+def gemini_text_client(model=None, timeout=60, max_tokens=700):
+    """Gemini over HTTPS. Reads GEMINI_API_KEY from the environment (key goes in a header, never a URL). Returns None when no key is set."""
+    import os
+
+    import requests
+    key = os.environ.get("GEMINI_API_KEY")
+    if not key:
+        return None
+    model = model or os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+
+    def call(prompt: str) -> str:
+        r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent", timeout=timeout, headers={"x-goog-api-key": key},
+                          json={"contents": [{"parts": [{"text": prompt}]}],
+                                "generationConfig": {"temperature": 0, "maxOutputTokens": max_tokens, "thinkingConfig": {"thinkingBudget": 0}}})
+        r.raise_for_status()
+        return "".join(p.get("text", "") for p in r.json()["candidates"][0]["content"]["parts"])
+    return call
+
+
+def with_fallback(*clients):
+    """First client that succeeds answers; `call.used` records which one (index into the non-None clients) and `call.errors` why earlier ones failed."""
+    clients = [c for c in clients if c]
+
+    def call(prompt: str) -> str:
+        call.errors = []
+        for i, c in enumerate(clients):
+            try:
+                out = c(prompt)
+                if out.strip():
+                    call.used = i
+                    return out
+                call.errors.append(f"client {i}: empty answer")
+            except Exception as e:
+                call.errors.append(f"client {i}: {type(e).__name__}")
+        raise RuntimeError("; ".join(call.errors) or "no model client configured")
+    call.used, call.errors = None, []
+    return call
